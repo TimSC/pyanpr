@@ -23,7 +23,7 @@ def ScoreUsingAspect(numberedRegions, vis = None):
 			aspect = 0.
 		area = xr * yr
 
-		targetAspect = 4.6
+		targetAspect = 6.8
 		aspectErr = abs(targetAspect - aspect)
 		if aspectErr > 1e-6:
 			score = 1. / aspectErr
@@ -100,7 +100,7 @@ if __name__ == "__main__":
 	greyim = 0.2126 * im[:,:,0] + 0.7152 * im[:,:,1] + 0.0722 * im[:,:,2]
 
 	#Highlight number plate
-	imnorm = greyim / 255.
+	imnorm = np.array(greyim, dtype=np.uint8)
 	se = np.ones((3, 30))
 	opim = morph.opening(imnorm, se)
 
