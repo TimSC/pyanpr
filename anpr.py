@@ -4,9 +4,9 @@ import scipy.signal as signal
 import numpy as np
 import skimage.morphology as morph
 import matplotlib.pyplot as plt
-import math
+import math, sys
 
-def ScoreUsingAspect(numberedRegions, vis = 0):
+def ScoreUsingAspect(numberedRegions, vis = None):
 	#Use first criterion (region aspect ratio) to select candidates
 	maxRegionNum = numberedRegions.max()
 
@@ -33,18 +33,18 @@ def ScoreUsingAspect(numberedRegions, vis = 0):
 
 		regionScores.append((score, regionNum))
 
-	if vis:
+	if vis is not None:
 		maxScore = np.array(regionScores)[:,0].max()
 		visCandidates = np.zeros(binIm.shape)
 		for regionNum, score in enumerate(regionScores):
 			region = (numberedRegions == regionNum) #Isolate region
 
 			visCandidates += region * (score[0] / maxScore) * 255.
-			misc.imsave("firstcritera.png", visCandidates)
+			misc.imsave(vis, visCandidates)
 
 	return regionScores
 
-def ScoreUsingSize(numberedRegions, imshape, vis = 0):
+def ScoreUsingSize(numberedRegions, imshape, vis = None):
 	#Use second criteria (of x and y range of region) to select candidates
 	maxRegionNum = numberedRegions.max()
 
@@ -70,14 +70,14 @@ def ScoreUsingSize(numberedRegions, imshape, vis = 0):
 		score = (1. / xerr) * (1. / yerr)
 		regionScores2.append((score, regionNum))
 
-	if vis:
+	if vis is not None:
 		maxScore = np.array(regionScores2)[:,0].max()
 		visCandidates = np.zeros(binIm.shape)
 		for regionNum, score in enumerate(regionScores2):
 			region = (numberedRegions == regionNum) #Isolate region
 
 			visCandidates += region * (score[0] / maxScore) * 255.
-			misc.imsave("secondcritera.png", visCandidates)
+			misc.imsave(vis, visCandidates)
 
 	return regionScores2
 
@@ -87,7 +87,14 @@ if __name__ == "__main__":
 	#field programmable gate arrays implementation
 	#Xiaojun Zhai, Faycal Bensaali, Soodamani Ramalingam
 
-	im = misc.imread("../pyanpr-data/56897161_d613d63bce_b.jpg")
+	fina = None
+	if len(sys.argv) >= 2:
+		fina = sys.argv[1]
+	if fina is None:
+		print "Specify input image on command line"
+		exit(0)
+
+	im = misc.imread(fina)
 	greyim = 0.2126 * im[:,:,0] + 0.7152 * im[:,:,1] + 0.0722 * im[:,:,2]
 
 	#Highlight number plate
@@ -97,17 +104,23 @@ if __name__ == "__main__":
 
 	diff = greyim - opim + 128.
 
+	misc.imsave("diff.png", diff)
+
 	#Binarize image
 	vals = diff.copy()
-	vals = vals.reshape((vals.size, 1))
+	vals = vals.reshape((vals.size))
 	vals.sort()
-	threshold = vals[math.floor(vals.size * 0.98)]
+	ind = int(round(vals.size * 0.98))
+	print "Index", ind, "of", vals.size 
+	threshold = vals[ind]
+	print vals[ind-1], vals[ind], vals[ind+1]
 	print "Threshold", threshold
 
-	#plt.hist(vals, bins=100)
-	#plt.show()
-
 	binIm = diff > threshold
+	misc.imsave("threshold.png", binIm)
+	#print vals.shape
+	#plt.plot(vals)
+	#plt.show()
 
 	#Denoise
 	diamond = morph.diamond(2)
@@ -118,10 +131,10 @@ if __name__ == "__main__":
 	print "Numbering regions"
 	numberedRegions, maxRegionNum = morph.label(denoiseIm2, 4, 0, return_num = True)
 
-	scores1 = ScoreUsingAspect(numberedRegions, 0)
+	scores1 = ScoreUsingAspect(numberedRegions, "firstcritera.png")
 	print "Using first criteria", scores1[-1]
 
-	scores2 = ScoreUsingSize(numberedRegions, binIm.shape, 0)
+	scores2 = ScoreUsingSize(numberedRegions, binIm.shape, "secondcriteria.png")
 	print "Using second criteria", scores2[-1]
 
 	
