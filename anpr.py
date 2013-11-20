@@ -101,9 +101,8 @@ if __name__ == "__main__":
 
 	#Highlight number plate
 	imnorm = np.array(greyim, dtype=np.uint8)
-	se = np.ones((3, 30))
+	se = np.ones((3, 30), dtype=np.uint8)
 	opim = morph.opening(imnorm, se)
-
 	diff = greyim - opim + 128.
 
 	misc.imsave("diff.png", diff)
