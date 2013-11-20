@@ -57,8 +57,8 @@ def ScoreUsingSize(numberedRegions, imshape, vis = None):
 		yr = pixPos[1].max() - pixPos[1].min()
 		area = xr * yr
 
-		xwtarget = 0.06
-		ywtarget = 0.2
+		xwtarget = 0.4
+		ywtarget = 0.15
 		xw = float(xr)/imshape[0]
 		yw = float(yr)/imshape[1]
 		xerr = abs(xw - xwtarget)
@@ -68,6 +68,7 @@ def ScoreUsingSize(numberedRegions, imshape, vis = None):
 		if yerr < 0.001:
 			yerr = 0.001
 		score = (1. / xerr) * (1. / yerr)
+		print regionNum, xw, yw, score
 		regionScores2.append((score, regionNum))
 
 	if vis is not None:
@@ -132,9 +133,11 @@ if __name__ == "__main__":
 	numberedRegions, maxRegionNum = morph.label(denoiseIm2, 4, 0, return_num = True)
 
 	scores1 = ScoreUsingAspect(numberedRegions, "firstcritera.png")
+	scores1.sort()
 	print "Using first criteria", scores1[-1]
 
 	scores2 = ScoreUsingSize(numberedRegions, binIm.shape, "secondcriteria.png")
+	scores2.sort()
 	print "Using second criteria", scores2[-1]
 
 	
