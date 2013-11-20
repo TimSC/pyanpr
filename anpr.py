@@ -87,6 +87,7 @@ if __name__ == "__main__":
 	#Improved number plate localisation algorithm and its efficient 
 	#field programmable gate arrays implementation
 	#Xiaojun Zhai, Faycal Bensaali, Soodamani Ramalingam
+	#IET Circuits Devices Syst., 2013, Vol. 7, Iss. 2, pp. 93-103
 
 	fina = None
 	if len(sys.argv) >= 2:
