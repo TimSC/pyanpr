@@ -68,7 +68,7 @@ def ScoreUsingSize(numberedRegions, imshape, vis = None):
 		if yerr < 0.001:
 			yerr = 0.001
 		score = (1. / xerr) * (1. / yerr)
-		print regionNum, xw, yw, score
+		#print regionNum, xw, yw, score
 		regionScores2.append((score, regionNum))
 
 	if vis is not None:
