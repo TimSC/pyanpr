@@ -3,6 +3,7 @@ import scipy.misc as misc
 import scipy.signal as signal
 import numpy as np
 import skimage.morphology as morph
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
 	im = misc.imread("../pyanpr-data/56897161_d613d63bce_b.jpg")
@@ -19,8 +20,10 @@ if __name__ == "__main__":
 
 	diff = greyim - opim + 128.
 
-	#
-
+	#Binarize image
+	
+	plt.hist(diff, bins=100)
+	plt.show()
 
 	misc.imsave("opim.png", diff)
 
