@@ -29,7 +29,7 @@ def ScoreUsingAspect(numberedRegions, vis = None):
 			score = 1. / aspectErr
 		else:
 			score = 1e-6
-		#print regionNum, score, aspect, aspectErr
+		print regionNum, score, aspect, aspectErr
 
 		regionScores.append((score, regionNum))
 
@@ -53,14 +53,14 @@ def ScoreUsingSize(numberedRegions, imshape, vis = None):
 
 		region = (numberedRegions == regionNum) #Isolate region
 		pixPos = np.where(region == True)
-		xr = pixPos[0].max() - pixPos[0].min()
-		yr = pixPos[1].max() - pixPos[1].min()
+		yr = pixPos[0].max() - pixPos[0].min()
+		xr = pixPos[1].max() - pixPos[1].min()
 		area = xr * yr
 
-		xwtarget = 0.4
-		ywtarget = 0.15
-		xw = float(xr)/imshape[0]
-		yw = float(yr)/imshape[1]
+		xwtarget = 0.34
+		ywtarget = 0.07
+		xw = float(xr)/imshape[1]
+		yw = float(yr)/imshape[0]
 		xerr = abs(xw - xwtarget)
 		yerr = abs(yw - ywtarget)
 		if xerr < 0.001:
@@ -68,7 +68,7 @@ def ScoreUsingSize(numberedRegions, imshape, vis = None):
 		if yerr < 0.001:
 			yerr = 0.001
 		score = (1. / xerr) * (1. / yerr)
-		#print regionNum, xw, yw, score
+		print regionNum, xw, yw, score
 		regionScores2.append((score, regionNum))
 
 	if vis is not None:
