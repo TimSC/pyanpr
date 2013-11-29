@@ -1,4 +1,4 @@
-import pickle, sys, math
+import pickle, sys, math, os
 import scipy.misc as misc
 import skimage.filter as filt
 import skimage.transform as transform
@@ -15,15 +15,25 @@ if __name__=="__main__":
 
 	finaIm = None
 	finaDat = None
+	finaOut = None
 
 	if len(sys.argv) >= 2:
 		finaIm = sys.argv[1]
 	if len(sys.argv) >= 3:
 		finaDat = sys.argv[2]
+	if len(sys.argv) >= 4:
+		finaDat = sys.argv[3]
+	
 
-	if finaIm is None or finaDat is None:
-		print "Specify input image and data on command line (2 args)"
+	if finaIm is None:
+		print "Specify input image on command line"
 		exit(0)
+	finaImSplit = os.path.splitext(finaIm)
+	if finaDat is None:
+		finaDat = finaImSplit[0] +".dat"
+	if finaOut is None:
+		finaOut = finaImSplit[0] +".deskew"
+
 	im = misc.imread(finaIm)
 
 	roi = pickle.load(open(finaDat,"rb"))
@@ -52,7 +62,6 @@ if __name__=="__main__":
 	edgeIm = np.abs(edgeIm.astype(np.float)-128.)
 	misc.imsave("test3.png", edgeIm)
 
-	
 	midThresh = 0.5 * (edgeIm.min() + edgeIm.max())
 	thresholdIm = (edgeIm > midThresh)
 	misc.imsave("test4.png", thresholdIm)
@@ -82,7 +91,7 @@ if __name__=="__main__":
 		bestAngle += math.pi /2.
 
 	print bestInd, bestAngle, math.degrees(bestAngle)
-	pickle.dump((bbox, bestAngle), open("out.deskew", "wb"), protocol=-1)
+	pickle.dump((bbox, bestAngle), open(finaOut, "wb"), protocol=-1)
 
 	rotIm = transform.rotate(im, math.degrees(bestAngle))
 	misc.imsave("rotIm.png", rotIm)
