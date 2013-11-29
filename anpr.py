@@ -4,7 +4,7 @@ import scipy.signal as signal
 import numpy as np
 import skimage.morphology as morph
 import matplotlib.pyplot as plt
-import math, sys
+import math, sys, pickle
 
 def ScoreUsingAspect(numberedRegions, vis = None):
 	#Use first criterion (region aspect ratio) to select candidates
@@ -15,6 +15,7 @@ def ScoreUsingAspect(numberedRegions, vis = None):
 
 		region = (numberedRegions == regionNum) #Isolate region
 		pixPos = np.where(region == True)
+		bbox = [[pixPos[0].min(), pixPos[0].max()], [pixPos[1].min(), pixPos[1].max()]]
 		xr = pixPos[0].max() - pixPos[0].min()
 		yr = pixPos[1].max() - pixPos[1].min()
 		if xr != 0.:
@@ -31,10 +32,10 @@ def ScoreUsingAspect(numberedRegions, vis = None):
 			score = 1e-6
 		print regionNum, score, aspect, aspectErr
 
-		regionScores.append((score, regionNum))
+		regionScores.append((score, regionNum, bbox))
 
 	if vis is not None:
-		maxScore = np.array(regionScores)[:,0].max()
+		maxScore = max([i[0] for i in regionScores])
 		visCandidates = np.zeros(binIm.shape)
 		for regionNum, score in enumerate(regionScores):
 			region = (numberedRegions == regionNum) #Isolate region
@@ -53,6 +54,7 @@ def ScoreUsingSize(numberedRegions, imshape, vis = None):
 
 		region = (numberedRegions == regionNum) #Isolate region
 		pixPos = np.where(region == True)
+		bbox = [[pixPos[0].min(), pixPos[0].max()], [pixPos[1].min(), pixPos[1].max()]]
 		yr = pixPos[0].max() - pixPos[0].min()
 		xr = pixPos[1].max() - pixPos[1].min()
 		area = xr * yr
@@ -69,10 +71,10 @@ def ScoreUsingSize(numberedRegions, imshape, vis = None):
 			yerr = 0.001
 		score = (1. / xerr) * (1. / yerr)
 		print regionNum, xw, yw, score
-		regionScores2.append((score, regionNum))
+		regionScores2.append((score, regionNum, bbox))
 
 	if vis is not None:
-		maxScore = np.array(regionScores2)[:,0].max()
+		maxScore = max([i[0] for i in regionScores2])
 		visCandidates = np.zeros(binIm.shape)
 		for regionNum, score in enumerate(regionScores2):
 			region = (numberedRegions == regionNum) #Isolate region
@@ -90,8 +92,14 @@ if __name__ == "__main__":
 	#IET Circuits Devices Syst., 2013, Vol. 7, Iss. 2, pp. 93-103
 
 	fina = None
+	methodNum = None
+	candidateNum = None
 	if len(sys.argv) >= 2:
 		fina = sys.argv[1]
+	if len(sys.argv) >= 3:
+		methodNum = sys.argv[2]
+	if len(sys.argv) >= 4:
+		candidateNum = sys.argv[3]
 	if fina is None:
 		print "Specify input image on command line"
 		exit(0)
@@ -135,6 +143,8 @@ if __name__ == "__main__":
 	scores1 = ScoreUsingAspect(numberedRegions, "firstcritera.png")
 	scores1.sort()
 	print "Using first criteria", scores1[-1]
+
+	pickle.dump(scores1[-1], open("out.dat", "wb"), protocol=-1)
 
 	scores2 = ScoreUsingSize(numberedRegions, binIm.shape, "secondcriteria.png")
 	scores2.sort()
