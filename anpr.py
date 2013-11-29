@@ -15,7 +15,7 @@ def ScoreUsingAspect(numberedRegions, vis = None):
 
 		region = (numberedRegions == regionNum) #Isolate region
 		pixPos = np.where(region == True)
-		bbox = [[pixPos[0].min(), pixPos[0].max()], [pixPos[1].min(), pixPos[1].max()]]
+		bbox = [[pixPos[1].min(), pixPos[1].max()], [pixPos[0].min(), pixPos[0].max()]]
 		xr = pixPos[0].max() - pixPos[0].min()
 		yr = pixPos[1].max() - pixPos[1].min()
 		if xr != 0.:
@@ -54,7 +54,7 @@ def ScoreUsingSize(numberedRegions, imshape, vis = None):
 
 		region = (numberedRegions == regionNum) #Isolate region
 		pixPos = np.where(region == True)
-		bbox = [[pixPos[0].min(), pixPos[0].max()], [pixPos[1].min(), pixPos[1].max()]]
+		bbox = [[pixPos[1].min(), pixPos[1].max()], [pixPos[0].min(), pixPos[0].max()]]
 		yr = pixPos[0].max() - pixPos[0].min()
 		xr = pixPos[1].max() - pixPos[1].min()
 		area = xr * yr
@@ -93,13 +93,13 @@ if __name__ == "__main__":
 
 	fina = None
 	methodNum = None
-	candidateNum = None
+	candidateNum = -1
 	if len(sys.argv) >= 2:
 		fina = sys.argv[1]
 	if len(sys.argv) >= 3:
-		methodNum = sys.argv[2]
+		methodNum = int(sys.argv[2])
 	if len(sys.argv) >= 4:
-		candidateNum = sys.argv[3]
+		candidateNum = int(sys.argv[3])
 	if fina is None:
 		print "Specify input image on command line"
 		exit(0)
@@ -144,12 +144,15 @@ if __name__ == "__main__":
 	scores1.sort()
 	print "Using first criteria", scores1[-1]
 
-	pickle.dump(scores1[-1], open("out.dat", "wb"), protocol=-1)
+	if methodNum == 1:
+		pickle.dump(scores1[-candidateNum], open("out.dat", "wb"), protocol=-1)
 
 	scores2 = ScoreUsingSize(numberedRegions, binIm.shape, "secondcriteria.png")
 	scores2.sort()
 	print "Using second criteria", scores2[-1]
 
+	if methodNum == 2:
+		pickle.dump(scores1[-candidateNum], open("out.dat", "wb"), protocol=-1)
 	
 
 
