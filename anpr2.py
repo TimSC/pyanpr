@@ -22,7 +22,7 @@ if __name__=="__main__":
 	if len(sys.argv) >= 3:
 		finaDat = sys.argv[2]
 	if len(sys.argv) >= 4:
-		finaDat = sys.argv[3]
+		finaOut = sys.argv[3]
 	
 
 	if finaIm is None:
