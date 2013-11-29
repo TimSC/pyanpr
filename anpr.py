@@ -110,11 +110,11 @@ if __name__ == "__main__":
 	#Binarize image
 	vals = diff.copy()
 	vals = vals.reshape((vals.size))
-	vals.sort()
-	ind = int(round(vals.size * 0.98))
-	print "Index", ind, "of", vals.size 
-	threshold = vals[ind]
-	print vals[ind-1], vals[ind], vals[ind+1]
+
+	meanVal = vals.mean()
+	stdVal = vals.std()
+	threshold = meanVal + stdVal
+
 	print "Threshold", threshold
 
 	binIm = diff > threshold
