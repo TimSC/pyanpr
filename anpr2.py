@@ -14,14 +14,9 @@ if __name__=="__main__":
 	roi = pickle.load(open("out.dat","rb"))
 	bbox = roi[2]
 	print bbox
-	
-	for x in range(bbox[0][0], bbox[0][1]):
-		im[bbox[1][0], x] = (0, 255, 0)
-		im[bbox[1][1], x] = (0, 255, 0)
 
-	for y in range(bbox[1][0], bbox[1][1]):
-		im[y, bbox[0][0]] = (0, 255, 0)
-		im[y, bbox[0][1]] = (0, 255, 0)
+	im = im[bbox[1][0]:bbox[1][1],:]
+	im = im[:,bbox[0][0]:bbox[0][1]]
 
 	im = misc.imsave("test.png", im)
 
