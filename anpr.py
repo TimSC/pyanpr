@@ -4,7 +4,7 @@ import scipy.signal as signal
 import numpy as np
 import skimage.morphology as morph
 import matplotlib.pyplot as plt
-import math, sys, pickle
+import math, sys, pickle, os
 
 def ScoreUsingAspect(numberedRegions, vis = None):
 	#Use first criterion (region aspect ratio) to select candidates
@@ -92,14 +92,8 @@ if __name__ == "__main__":
 	#IET Circuits Devices Syst., 2013, Vol. 7, Iss. 2, pp. 93-103
 
 	fina = None
-	methodNum = None
-	candidateNum = -1
 	if len(sys.argv) >= 2:
 		fina = sys.argv[1]
-	if len(sys.argv) >= 3:
-		methodNum = int(sys.argv[2])
-	if len(sys.argv) >= 4:
-		candidateNum = int(sys.argv[3])
 	if fina is None:
 		print "Specify input image on command line"
 		exit(0)
@@ -140,19 +134,33 @@ if __name__ == "__main__":
 	print "Numbering regions"
 	numberedRegions, maxRegionNum = morph.label(denoiseIm2, 4, 0, return_num = True)
 
+	if not os.path.exists("candidates"):
+		os.mkdir("candidates")
+
 	scores1 = ScoreUsingAspect(numberedRegions, "firstcritera.png")
 	scores1.sort()
-	print "Using first criteria", scores1[-1]
+	scores1.reverse()
+	print "Using first criteria", scores1[0]
 
-	if methodNum == 1:
-		pickle.dump(scores1[-candidateNum], open("out.dat", "wb"), protocol=-1)
+	for i, can in enumerate(scores1):
+		bbox = can[2]
+		patchIm = im[bbox[1][0]:bbox[1][1],:]
+		patchIm = patchIm[:,bbox[0][0]:bbox[0][1]]
+		misc.imsave("candidates/1-{0}.png".format(i), patchIm)
+		pickle.dump(can, open("candidates/1-{0}.dat".format(i), "wb"), protocol=-1)
 
 	scores2 = ScoreUsingSize(numberedRegions, binIm.shape, "secondcriteria.png")
 	scores2.sort()
-	print "Using second criteria", scores2[-1]
+	scores2.reverse()
+	print "Using second criteria", scores2[0]
 
-	if methodNum == 2:
-		pickle.dump(scores1[-candidateNum], open("out.dat", "wb"), protocol=-1)
+	for i, can in enumerate(scores2):
+		bbox = can[2]
+		patchIm = im[bbox[1][0]:bbox[1][1],:]
+		patchIm = patchIm[:,bbox[0][0]:bbox[0][1]]
+		misc.imsave("candidates/1-{0}.png".format(i), patchIm)
+		pickle.dump(can, open("candidates/1-{0}.dat".format(i), "wb"), protocol=-1)
+
 	
 
 
