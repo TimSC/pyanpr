@@ -1,4 +1,9 @@
 
+#Improved number plate localisation algorithm and its efficient 
+#field programmable gate arrays implementation
+#Xiaojun Zhai, Faycal Bensaali, Soodamani Ramalingam
+#IET Circuits Devices Syst., 2013, Vol. 7, Iss. 2, pp. 93-103
+
 import scipy.misc as misc
 import scipy.signal as signal
 import numpy as np
@@ -85,11 +90,6 @@ def ScoreUsingSize(numberedRegions, imshape, vis = None):
 	return regionScores2
 
 if __name__ == "__main__":
-
-	#Improved number plate localisation algorithm and its efficient 
-	#field programmable gate arrays implementation
-	#Xiaojun Zhai, Faycal Bensaali, Soodamani Ramalingam
-	#IET Circuits Devices Syst., 2013, Vol. 7, Iss. 2, pp. 93-103
 
 	fina = None
 	if len(sys.argv) >= 2:
