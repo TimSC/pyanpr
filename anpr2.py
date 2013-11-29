@@ -83,4 +83,6 @@ if __name__=="__main__":
 	print bestInd, bestAngle, math.degrees(bestAngle)
 	pickle.dump((bbox, bestAngle), open("out.deskew", "wb"), protocol=-1)
 
+	rotIm = skimage.transform.rotate(im, bestAngle)
+	misc.imsave("rotIm.png", rotIm)
 
