@@ -1,5 +1,6 @@
 import pickle, sys
 import scipy.misc as misc
+from skimage.transform import hough_line, hough_line_peaks
 
 if __name__=="__main__":
 
@@ -24,4 +25,7 @@ if __name__=="__main__":
 	im = im[:,bbox[0][0]:bbox[0][1]]
 
 	im = misc.imsave("test.png", im)
+	greyim = 0.2126 * im[:,:,0] + 0.7152 * im[:,:,1] + 0.0722 * im[:,:,2]
 
+	h, theta, d = hough_line(greyim)
+	print h, theta, d
