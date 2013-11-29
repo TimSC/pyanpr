@@ -1,6 +1,7 @@
 import pickle, sys, math
 import scipy.misc as misc
 import skimage.filter as filt
+import skimage.transform as transform
 from skimage.transform import hough_line, hough_line_peaks
 import matplotlib.pyplot as plt
 import numpy as np
@@ -83,6 +84,6 @@ if __name__=="__main__":
 	print bestInd, bestAngle, math.degrees(bestAngle)
 	pickle.dump((bbox, bestAngle), open("out.deskew", "wb"), protocol=-1)
 
-	rotIm = skimage.transform.rotate(im, bestAngle)
+	rotIm = transform.rotate(im, math.degrees(bestAngle))
 	misc.imsave("rotIm.png", rotIm)
 
