@@ -829,6 +829,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/easy/IMG_20140220_160530.jpg
 
 object: 122
 bbox: 981,1253,439,171
+plate: reflection
 reg: S213 BUF
 
 ########## NEW FILE ##########
@@ -836,6 +837,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140219_105217.jpg
 
 object: 123
 bbox: 708,1476,544,168
+plate: rust
 reg: LC51 RHU
 
 ########## NEW FILE ##########
@@ -843,6 +845,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140219_105848.jpg
 
 object: 124
 bbox: 961,1471,368,123
+plate: dirt
 reg: WP55 WML
 
 ########## NEW FILE ##########
@@ -857,6 +860,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140219_110650.jpg
 
 object: 126
 bbox: 557,1119,193,167
+plate: shadow
 reg: N409 YKL
 
 ########## NEW FILE ##########
@@ -864,6 +868,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140219_110704.jpg
 
 object: 127
 bbox: 556,1186,290,92
+plate: dirt
 reg: AF54 UTG
 
 ########## NEW FILE ##########
@@ -885,6 +890,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140219_145105.jpg
 
 object: 130
 bbox: 881,1157,325,104
+plate: overexposed
 reg: GJ11 LCO
 
 ########## NEW FILE ##########
@@ -892,6 +898,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140219_145158.jpg
 
 object: 131
 bbox: 701,1416,356,146
+plate: rust
 reg: GL04 UTK
 
 ########## NEW FILE ##########
@@ -899,6 +906,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140219_145437.jpg
 
 object: 132
 bbox: 352,1120,160,161
+plate: two-line
 reg: G398 TKK
 
 ########## NEW FILE ##########
@@ -906,6 +914,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140219_145611.jpg
 
 object: 133
 bbox: 945,1490,478,188
+plate: rust
 reg: W867 WHK
 
 ########## NEW FILE ##########
@@ -913,6 +922,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140219_150125.jpg
 
 object: 134
 bbox: 877,1600,342,175
+plate: two-line
 reg: M784 UKM
 
 ########## NEW FILE ##########
@@ -920,6 +930,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140219_151345.jpg
 
 object: 135
 bbox: 993,1535,281,157
+plate: two-line
 reg: S472 BWP
 
 ########## NEW FILE ##########
@@ -927,6 +938,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_153414.jpg
 
 object: 136
 bbox: 536,1222,434,170
+plate: lens-flare
 reg: GF07 DAU
 
 ########## NEW FILE ##########
@@ -941,6 +953,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_153935.jpg
 
 object: 138
 bbox: 674,1114,479,150
+plate: rust
 reg: LX02 WND
 
 ########## NEW FILE ##########
@@ -948,6 +961,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_154032.jpg
 
 object: 139
 bbox: 834,914,275,85
+plate: shadow
 reg: NC05 OLM
 
 ########## NEW FILE ##########
@@ -955,6 +969,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_154051.jpg
 
 object: 140
 bbox: 451,1232,409,178
+plate: cracked
 reg: HY53 TUU
 
 ########## NEW FILE ##########
@@ -969,6 +984,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_154643.jpg
 
 object: 142
 bbox: 592,1255,235,179
+plate: two-line
 reg: N316 FKJ
 
 ########## NEW FILE ##########
@@ -976,6 +992,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_154832.jpg
 
 object: 143
 bbox: 810,815,377,119
+plate: lens-flare
 reg: GD10 GYZ
 
 ########## NEW FILE ##########
@@ -983,6 +1000,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_154857.jpg
 
 object: 144
 bbox: 778,1282,363,129
+plate: shadow
 reg: B7 SUB
 
 ########## NEW FILE ##########
@@ -990,6 +1008,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_155005.jpg
 
 object: 145
 bbox: 975,994,344,113
+plate: lens-flare
 reg: LV02 UWU
 
 ########## NEW FILE ##########
@@ -997,6 +1016,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_155017.jpg
 
 object: 146
 bbox: 959,1328,439,131
+plate: lens-flare
 reg: DA05 OUO
 
 ########## NEW FILE ##########
@@ -1004,6 +1024,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_155026.jpg
 
 object: 147
 bbox: 1007,1206,453,165
+plate: lens-flare
 reg: Y368 CCE
 
 ########## NEW FILE ##########
@@ -1011,6 +1032,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_155112.jpg
 
 object: 148
 bbox: 817,1233,464,159
+plate: shadow
 reg: E1 DSP
 
 ########## NEW FILE ##########
@@ -1018,6 +1040,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_155403.jpg
 
 object: 149
 bbox: 705,1191,675,181
+plate: lens-flare
 reg: S45 UHJ
 
 ########## NEW FILE ##########
@@ -1025,6 +1048,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_155412.jpg
 
 object: 150
 bbox: 746,1408,490,140
+plate: dirt
 reg: KV55 BVH
 
 ########## NEW FILE ##########
@@ -1032,6 +1056,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_155439.jpg
 
 object: 151
 bbox: 771,1221,438,109
+plate: shadow
 reg: KT53 EHB
 
 ########## NEW FILE ##########
@@ -1039,6 +1064,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_155514.jpg
 
 object: 152
 bbox: 525,1076,331,127
+plate: lens-flare
 reg: GY07 OSF
 
 ########## NEW FILE ##########
@@ -1046,6 +1072,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_155619.jpg
 
 object: 153
 bbox: 798,1129,283,78
+plate: rust
 reg: AV06 WKA
 
 ########## NEW FILE ##########
@@ -1053,6 +1080,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_155839.jpg
 
 object: 154
 bbox: 514,1170,400,155
+plate: reflection
 reg: GK06 BFF
 
 ########## NEW FILE ##########
@@ -1060,6 +1088,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_155848.jpg
 
 object: 155
 bbox: 420,1416,458,167
+plate: reflection
 reg: GF57 EWT
 
 ########## NEW FILE ##########
@@ -1067,6 +1096,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_155936.jpg
 
 object: 156
 bbox: 809,1159,474,138
+plate: lens-flare
 reg: CN63 GUC
 
 ########## NEW FILE ##########
@@ -1074,6 +1104,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_160039.jpg
 
 object: 157
 bbox: 643,1080,443,190
+plate: occluded
 reg: YP05 FNX
 
 ########## NEW FILE ##########
@@ -1081,6 +1112,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_160047.jpg
 
 object: 158
 bbox: 1085,1457,495,204
+plate: shadow
 reg: BP03 TZE
 
 ########## NEW FILE ##########
@@ -1088,6 +1120,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_160059.jpg
 
 object: 159
 bbox: 647,1155,509,177
+plate: shadow
 reg: V789 JNO
 
 ########## NEW FILE ##########
@@ -1095,6 +1128,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_160138.jpg
 
 object: 160
 bbox: 651,1300,598,181
+plate: rust
 reg: GD02 HVP
 
 ########## NEW FILE ##########
@@ -1102,6 +1136,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_160201.jpg
 
 object: 161
 bbox: 615,1283,413,185
+plate: shadow
 reg: LW02 MFY
 
 ########## NEW FILE ##########
@@ -1109,6 +1144,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_160546.jpg
 
 object: 162
 bbox: 760,1067,327,95
+plate: reflection
 reg: P763 UPN
 
 ########## NEW FILE ##########
@@ -1116,5 +1152,6 @@ file: /home/tim/kinatomic/datasets/anpr-plates/hard/IMG_20140220_160607.jpg
 
 object: 163
 bbox: 495,1069,430,199
+plate: reflection
 reg: RA03 NLC
 
