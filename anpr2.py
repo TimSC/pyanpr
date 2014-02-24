@@ -7,38 +7,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.ndimage
 
-if __name__=="__main__":
-
+def Deskew(im, bbox):
 	#Deskew the candidate patch
 	#Based on ALGORITHMIC AND MATHEMATICAL PRINCIPLES OF AUTOMATIC NUMBER PLATE RECOGNITION SYSTEMS 
 	#ONDREJ MARTINSKY
-
-	finaIm = None
-	finaDat = None
-	finaOut = None
-
-	if len(sys.argv) >= 2:
-		finaIm = sys.argv[1]
-	if len(sys.argv) >= 3:
-		finaDat = sys.argv[2]
-	if len(sys.argv) >= 4:
-		finaOut = sys.argv[3]
-	
-
-	if finaIm is None:
-		print "Specify input image on command line"
-		exit(0)
-	finaImSplit = os.path.splitext(finaIm)
-	if finaDat is None:
-		finaDat = finaImSplit[0] +".dat"
-	if finaOut is None:
-		finaOut = finaImSplit[0] +".deskew"
-
-	im = misc.imread(finaIm)
-
-	roi = pickle.load(open(finaDat,"rb"))
-	bbox = roi[2]
-	print bbox
 
 	#Expand bbox
 	mid = [sum(comp)/len(comp) for comp in bbox]
@@ -90,9 +62,41 @@ if __name__=="__main__":
 	while bestAngle < -math.pi /4.:
 		bestAngle += math.pi /2.
 
+	rotIm = transform.rotate(im, math.degrees(bestAngle))
+	return bbox, bestInd, bestAngle, rotIm
+
+if __name__=="__main__":
+
+	finaIm = None
+	finaDat = None
+	finaOut = None
+
+	if len(sys.argv) >= 2:
+		finaIm = sys.argv[1]
+	if len(sys.argv) >= 3:
+		finaDat = sys.argv[2]
+	if len(sys.argv) >= 4:
+		finaOut = sys.argv[3]
+
+	if finaIm is None:
+		print "Specify input image on command line"
+		exit(0)
+	finaImSplit = os.path.splitext(finaIm)
+	if finaDat is None:
+		finaDat = finaImSplit[0] +".dat"
+	if finaOut is None:
+		finaOut = finaImSplit[0] +".deskew"
+
+	im = misc.imread(finaIm)
+
+	roi = pickle.load(open(finaDat,"rb"))
+	bbox = roi[2]
+	print bbox
+
+	bbox, bestInd, bestAngle, rotIm = Deskew(im, bbox)
+
 	print bestInd, bestAngle, math.degrees(bestAngle)
 	pickle.dump((bbox, bestAngle), open(finaOut, "wb"), protocol=-1)
 
-	rotIm = transform.rotate(im, math.degrees(bestAngle))
 	misc.imsave("rotIm.png", rotIm)
 

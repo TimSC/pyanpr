@@ -37,7 +37,7 @@ def ScoreUsingAspect(numberedRegions, vis = None):
 			score = 1e-6
 		print regionNum, score, aspect, aspectErr
 
-		regionScores.append((score, regionNum, bbox))
+		regionScores.append([score, regionNum, bbox])
 
 	if vis is not None:
 		maxScore = max([i[0] for i in regionScores])
@@ -76,7 +76,7 @@ def ScoreUsingSize(numberedRegions, imshape, vis = None):
 			yerr = 0.001
 		score = (1. / xerr) * (1. / yerr)
 		print regionNum, xw, yw, score
-		regionScores2.append((score, regionNum, bbox))
+		regionScores2.append([score, regionNum, bbox])
 
 	if vis is not None:
 		maxScore = max([i[0] for i in regionScores2])
@@ -99,6 +99,20 @@ if __name__ == "__main__":
 		exit(0)
 
 	im = misc.imread(fina)
+
+	#Resize to 800 pixels max edge size
+	targetDim = 800
+	scaling = 1.
+	if im.shape[0] > im.shape[1]:
+		if im.shape[0] != targetDim:
+			scaling = float(targetDim) / im.shape[0]
+			im = misc.imresize(im, (targetDim, int(round(im.shape[1] * scaling))))
+	else:
+		if im.shape[1] != targetDim:
+			scaling = float(targetDim) / im.shape[1]
+			im = misc.imresize(im, (int(round(im.shape[0] * scaling)), targetDim))
+	print "scaling", scaling
+
 	greyim = 0.2126 * im[:,:,0] + 0.7152 * im[:,:,1] + 0.0722 * im[:,:,2]
 
 	#Highlight number plate
@@ -146,8 +160,13 @@ if __name__ == "__main__":
 		bbox = can[2]
 		patchIm = im[bbox[1][0]:bbox[1][1],:]
 		patchIm = patchIm[:,bbox[0][0]:bbox[0][1]]
+		print bbox
+		scaledBBox = [(c[0] / scaling, c[1] / scaling) for c in bbox]
 		misc.imsave("candidates/1-{0}.png".format(i), patchIm)
-		pickle.dump(can, open("candidates/1-{0}.dat".format(i), "wb"), protocol=-1)
+
+		outRecord = can[:]
+		outRecord[2] = scaledBBox
+		pickle.dump(outRecord, open("candidates/1-{0}.dat".format(i), "wb"), protocol=-1)
 
 	scores2 = ScoreUsingSize(numberedRegions, binIm.shape, "secondcriteria.png")
 	scores2.sort()
@@ -158,13 +177,10 @@ if __name__ == "__main__":
 		bbox = can[2]
 		patchIm = im[bbox[1][0]:bbox[1][1],:]
 		patchIm = patchIm[:,bbox[0][0]:bbox[0][1]]
+		scaledBBox = [(c[0] / scaling, c[1] / scaling) for c in bbox]
 		misc.imsave("candidates/1-{0}.png".format(i), patchIm)
-		pickle.dump(can, open("candidates/1-{0}.dat".format(i), "wb"), protocol=-1)
 
-	
-
-
-	
-
-	
+		outRecord = can[:]
+		outRecord[2] = scaledBBox
+		pickle.dump(outRecord, open("candidates/1-{0}.dat".format(i), "wb"), protocol=-1)
 
