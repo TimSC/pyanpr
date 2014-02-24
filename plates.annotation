@@ -2,7 +2,7 @@
 file: /home/tim/kinatomic/datasets/anpr-plates/IMG_20140219_105154.jpg
 
 object: 3
-bbox: 661,1266,655,159
+bbox: 653,1247,673,187
 reg: RK54 AFF
 
 ########## NEW FILE ##########
