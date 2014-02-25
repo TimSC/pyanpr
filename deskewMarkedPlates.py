@@ -2,6 +2,7 @@
 import readannotation, deskew
 import scipy.misc as misc
 import skimage.color as color
+import skimage.exposure as exposure
 import numpy as np
 import math
 
@@ -58,7 +59,9 @@ if __name__=="__main__":
 
 			imScore = RgbToPlateBackgroundScore(rotIm)
 
-			misc.imsave("rotIm{0}.png".format(count), imScore)
+			normContrast = exposure.rescale_intensity(imScore)
+
+			misc.imsave("rotIm{0}.png".format(count), normContrast)
 			
 
 			count += 1
