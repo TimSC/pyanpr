@@ -3,6 +3,7 @@ import scipy.misc as misc
 import skimage.filter as filt
 import skimage.transform as transform
 from skimage.transform import hough_line, hough_line_peaks
+import skimage.transform as transform
 import numpy as np
 import scipy.ndimage
 
@@ -86,9 +87,28 @@ def Deskew(im, bbox, saveTempImages = False):
 	return bbox, bestInd, bestAngle
 
 def RotateAndCrop(im, bbox, bestAngle):
-	bboxMod = ExpandBBox(bbox, 0.2)
-	im = CropToBBox(im, bboxMod)
-	return transform.rotate(im, math.degrees(bestAngle))
+
+	pat = transform.PiecewiseAffineTransform()
+	print "test", bbox	
+
+	dstPts = [(bbox[0][0],bbox[1][0]),
+		(bbox[0][1],bbox[1][0]),
+		(bbox[0][1],bbox[1][1]),
+		(bbox[0][0],bbox[1][1])]
+
+	srcPts = [(0.,0.),
+		(bbox[0][1]-bbox[0][0],0.),
+		(bbox[0][1]-bbox[0][0],bbox[1][1]-bbox[1][0]),
+		(0.,bbox[1][1]-bbox[1][0])]
+
+	srcPts = np.array(srcPts)
+	dstPts = np.array(dstPts)
+
+	#Rotate points
+	#TODO
+
+	pat.estimate(srcPts, dstPts)
+	return transform.warp(im, pat, output_shape=(bbox[1][1]-bbox[1][0], bbox[0][1]-bbox[0][0]))
 
 if __name__=="__main__":
 
