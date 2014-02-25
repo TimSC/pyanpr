@@ -59,10 +59,29 @@ if __name__=="__main__":
 
 			imScore = RgbToPlateBackgroundScore(rotIm)
 
-			normContrast = exposure.rescale_intensity(imScore)
+			#normContrast = exposure.rescale_intensity(imScore)
+			normContrast = exposure.equalize_adapthist(imScore)
+
+			thresh = 0.6 * (normContrast.min() + normContrast.max())
+			#normContrast = (normContrast > 0.5)
+			#print normContrast.min(), normContrast.max()
 
 			misc.imsave("rotIm{0}.png".format(count), normContrast)
 			
+			import matplotlib.pyplot as plt
+			dat = normContrast.reshape((normContrast.size,))
+
+			plt.subplot(3,1,1)
+			ims = plt.imshow(normContrast)
+			ims.set_cmap('gray')
+
+			plt.subplot(3,1,2)
+			ims = plt.imshow(normContrast > thresh)
+			ims.set_cmap('gray')
+
+			plt.subplot(3,1,3)
+			plt.hist(dat, bins=256)
+			plt.show()
 
 			count += 1
 
