@@ -6,6 +6,22 @@ from skimage.transform import hough_line, hough_line_peaks
 import numpy as np
 import scipy.ndimage
 
+def ExpandBBox(bbox, factor):
+	print "bbox", bbox
+	#Expand bbox
+	mid = [sum(comp)/len(comp) for comp in bbox]
+	print "mid", mid
+	xd = (mid[0] - bbox[0][0]) * factor
+	yd = (mid[1] - bbox[1][0]) * factor
+	bboxMod = [[bbox[0][0]-xd, bbox[0][1]+xd], [bbox[1][0]-yd, bbox[1][1]+yd]]
+	bboxMod = [map(int, map(round, pt)) for pt in bboxMod]
+	print "bbox expanded", bboxMod
+	return bboxMod
+
+def CropToBBox(im, bbox):
+	im2 = im[bbox[1][0]:bbox[1][1],:]
+	return im2[:,bbox[0][0]:bbox[0][1]]
+
 def Deskew(im, bbox, saveTempImages = False):
 	#Deskew the candidate patch
 	#Based on ALGORITHMIC AND MATHEMATICAL PRINCIPLES OF AUTOMATIC NUMBER PLATE RECOGNITION SYSTEMS 
@@ -17,21 +33,12 @@ def Deskew(im, bbox, saveTempImages = False):
 	#[(min_x, max_x), (min_y, max_y)]
 	#Example: [(735.4, 1299.24), (1296.0, 1399.6)]
 
-	print "bbox", bbox
-	#Expand bbox
-	mid = [sum(comp)/len(comp) for comp in bbox]
-	print "mid", mid
-	xd = (mid[0] - bbox[0][0]) * 0.2
-	yd = (mid[1] - bbox[1][0]) * 0.2
-	bboxMod = [[bbox[0][0]-xd, bbox[0][1]+xd], [bbox[1][0]-yd, bbox[1][1]+yd]]
-	bboxMod = [map(int, map(round, pt)) for pt in bboxMod]
-	print "bbox expanded", bboxMod
+	bboxMod = ExpandBBox(bbox, 0.2)
+	im = CropToBBox(im, bboxMod)
 
 	#Crop image to get ROI
 	print "im original shape", im.shape
-	im = im[bboxMod[1][0]:bboxMod[1][1],:]
-	print bboxMod[1][0], bboxMod[1][1]
-	im = im[:,bboxMod[0][0]:bboxMod[0][1]]
+
 	print "im shape", im.shape
 
 	#Convert to grey
@@ -76,8 +83,12 @@ def Deskew(im, bbox, saveTempImages = False):
 	while bestAngle < -math.pi /4.:
 		bestAngle += math.pi /2.
 
-	rotIm = transform.rotate(im, math.degrees(bestAngle))
-	return bbox, bestInd, bestAngle, rotIm
+	return bbox, bestInd, bestAngle
+
+def RotateAndCrop(im, bbox, bestAngle):
+	bboxMod = ExpandBBox(bbox, 0.2)
+	im = CropToBBox(im, bboxMod)
+	return transform.rotate(im, math.degrees(bestAngle))
 
 if __name__=="__main__":
 
@@ -107,10 +118,12 @@ if __name__=="__main__":
 	bbox = roi[2]
 	print "bbox", bbox
 
-	bbox, bestInd, bestAngle, rotIm = Deskew(im, bbox, True)
+	bbox, bestInd, bestAngle = Deskew(im, bbox, True)
 
 	print bestInd, bestAngle, math.degrees(bestAngle)
 	pickle.dump((bbox, bestAngle), open(finaOut, "wb"), protocol=-1)
+
+	rotIm = RotateAndCrop(im, bbox, bestAngle)
 
 	misc.imsave("rotIm.png", rotIm)
 
