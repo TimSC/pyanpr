@@ -86,7 +86,7 @@ def Deskew(im, bbox, saveTempImages = False):
 
 	return bbox, bestInd, bestAngle
 
-def RotateAndCrop(im, bbox, bestAngle):
+def RotateAndCrop(im, bbox, angle):
 
 	pat = transform.PiecewiseAffineTransform()
 
@@ -104,10 +104,14 @@ def RotateAndCrop(im, bbox, bestAngle):
 	dstPts = np.array(dstPts)
 
 	#Rotate points
-	print srcPts
-	print srcPts.mean(axis=1)
+	meanPos = dstPts.mean(axis=0)
+	centrePts = dstPts - meanPos
+	rotMatrix = [[math.cos(-angle), math.sin(-angle)], 
+		[-math.sin(-angle), math.cos(-angle)]]
+	rotPts = np.dot(rotMatrix, centrePts.transpose()).transpose()
+	rotDstPts = rotPts + meanPos
 
-	pat.estimate(srcPts, dstPts)
+	pat.estimate(srcPts, rotDstPts)
 	return transform.warp(im, pat, output_shape=(bbox[1][1]-bbox[1][0], bbox[0][1]-bbox[0][0]))
 
 if __name__=="__main__":
