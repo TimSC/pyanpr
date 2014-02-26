@@ -112,7 +112,9 @@ def RotateAndCrop(im, bbox, angle):
 	rotDstPts = rotPts + meanPos
 
 	pat.estimate(srcPts, rotDstPts)
-	return transform.warp(im, pat, output_shape=(bbox[1][1]-bbox[1][0], bbox[0][1]-bbox[0][0]))
+	outSize = bbox[1][1]-bbox[1][0], bbox[0][1]-bbox[0][0]
+	outSize = map(int, map(round, outSize))
+	return transform.warp(im, pat, output_shape=outSize)
 
 if __name__=="__main__":
 

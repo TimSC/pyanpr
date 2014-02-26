@@ -59,8 +59,9 @@ if __name__=="__main__":
 
 			imScore = RgbToPlateBackgroundScore(rotIm)
 
-			#normContrast = exposure.rescale_intensity(imScore)
-			normContrast = exposure.equalize_adapthist(imScore)
+			#normContrast = exposure.equalize_hist(imScore)
+			normContrast = exposure.rescale_intensity(imScore)
+			#normContrast = exposure.equalize_adapthist(imScore)
 
 			thresh = 0.6 * (normContrast.min() + normContrast.max())
 			#normContrast = (normContrast > 0.5)
