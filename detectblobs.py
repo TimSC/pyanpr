@@ -72,6 +72,77 @@ def FindBlobs(scoreIm, numThresholds = 100, maxLetterArea = 0.05):
 	print "best", bestThreshold, bestRegionSum
 	return bestNumberedRegions
 
+def BlobBbox(im):
+	pos = np.where(im==True)
+	return pos[0].min(), pos[0].max(), pos[1].min(), pos[1].max()
+
+def BlobCofG(im):
+	pos = np.where(im==True)
+	return pos[0].mean(), pos[1].mean()
+
+def Check1DOverlap(range1, range2):
+	min1 = min(range1)
+	max1 = max(range1)
+	min2 = min(range2)
+	max2 = max(range2)
+	#print min1, max1, min2, max2
+	if min1 >= min2 and min1 <= max2: return 1 #Partial overlap
+	if max1 >= min2 and max1 <= max2: return 1 #Partial overlap
+	if min1 <= min2 and max1 >= max2: return 2 #Contained
+	return False
+
+def FindCharacterBboxes(numberedRegions):
+	
+	maxRegion = numberedRegions.max()
+	bboxLi = []
+	for rn in range(maxRegion):
+		regionIm = numberedRegions == rn
+		bbox = BlobBbox(regionIm)
+		bboxLi.append(bbox)
+
+	#The tops and bottoms of the letters are aligned
+	bboxLi = np.array(bboxLi)
+	topY = bboxLi[:,0]
+	bottomY = bboxLi[:,1]
+	medianTopY = int(round(np.median(topY)))
+	medianBottomY = int(round(np.median(bottomY)))
+
+	print "median top and bottom", medianTopY, medianBottomY
+	
+	#Sort blobs by width
+	blobWidth = [(bbox[3] - bbox[2], i) for (i, bbox) in enumerate(bboxLi)]
+	blobWidth.sort()
+
+	#For each blob, add to valid list if conditions are met
+	blobWidths = []
+	for blobWidth, blobNum in blobWidth[::-1]:
+		bbox = bboxLi[blobNum]
+		cofg = BlobCofG(numberedRegions == blobNum)
+		#print blobWidth, blobNum, cofg
+		if cofg[0] < medianTopY or cofg[0] > medianBottomY:
+			continue #Outside lettering area
+
+		#Check if this collides with existing width ranges
+		containedWithin = []
+		partialOverlapWith = []
+		for i, bw in enumerate(blobWidths):
+			result = Check1DOverlap(bw, bbox[2:])
+			if result == 1:
+				partialOverlapWith.append(i)
+			if result == 2:
+				containedWithin.append(i)
+
+		if len(partialOverlapWith) > 0: continue
+		if len(containedWithin) > 0: continue
+
+		blobWidths.append((bbox[2], bbox[3]))
+
+	blobWidths.sort()
+
+	out = []
+	for bw in blobWidths:
+		out.append(bw + (medianTopY, medianBottomY))
+	return out
 
 if __name__ == "__main__":
 	finaIm = None
@@ -89,13 +160,16 @@ if __name__ == "__main__":
 	im = misc.imread(finaIm)
 	bbox, angle = pickle.load(open(finaDeskew))
 	
-
 	rotIm = deskew.RotateAndCrop(im, bbox, angle)
 	
 	scoreIm = deskewMarkedPlates.RgbToPlateBackgroundScore(rotIm)
 
 	bestNumberedRegions = FindBlobs(scoreIm)
 
-	numberedRegionsIm = exposure.rescale_intensity(bestNumberedRegions != -1)
-	misc.imshow(numberedRegionsIm)
+	#numberedRegionsIm = exposure.rescale_intensity(bestNumberedRegions != -1)
+	#misc.imshow(numberedRegionsIm)
+
+	charBboxes = FindCharacterBboxes(bestNumberedRegions)
+	print charBboxes
+
 
