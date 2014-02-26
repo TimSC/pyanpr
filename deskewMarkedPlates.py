@@ -11,7 +11,7 @@ def RgbToPlateBackgroundScore(im):
 	#since UK plates come in two different colours, they are merged into
 	#a single score here.
 
-	hsvImg = color.rgb2hsv(rotIm)
+	hsvImg = color.rgb2hsv(im)
 
 	#Target colours
 	#Yellow HSV 47/360, 81/100, 100/100 or 32/255, 217/255, > 248/255
