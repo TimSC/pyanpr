@@ -28,35 +28,59 @@ if __name__ == "__main__":
 
 	normIm = exposure.rescale_intensity(scoreIm)
 
-	seedPoint = 150, 50
-
 	thresholds = np.linspace(normIm.min(), normIm.max(), 10.)
 
+	#Find blobs at various thresolds and calculate area
 	thresholdBlobSizes = []
-	seedInRegionList = []
+	numberedRegionIms = []
 	for threshold in thresholds:
 
 		thresholdIm = normIm < threshold
 
 		blobSizes = []
 		numberedRegions, maxRegionNum = morph.label(thresholdIm, 4, 0, return_num = True)
+		numberedRegionIms.append(numberedRegions)
 		for regionNum in range(maxRegionNum):
 			regionIm = numberedRegions == regionNum
 			#print threshold, regionNum, regionIm.min(), regionIm.max(), regionIm.sum()
 			blobSizes.append(regionIm.sum())
 		thresholdBlobSizes.append(blobSizes)
+	
+#	for threshold, blobSizes, seedInRegion in zip(thresholds, thresholdBlobSizes, seedInRegionList):
+#		blobSi = None
+#		if seedInRegion != -1:
+#			blobSi = blobSizes[seedInRegion]
 
-		seedInRegion = numberedRegions[seedPoint[1], seedPoint[0]]
-		seedInRegionList.append(seedInRegion)
+#		print threshold, maxRegionNum, seedInRegion, blobSi
 
-	for threshold, blobSizes, seedInRegion in zip(thresholds, thresholdBlobSizes, seedInRegionList):
-		blobSi = None
-		if seedInRegion != -1:
-			blobSi = blobSizes[seedInRegion]
+		#thresholdIm = normIm < threshold
+		#numberedRegions, maxRegionNum = morph.label(thresholdIm, 4, 0, return_num = True)
+		#misc.imshow(numberedRegions==seedInRegion)
+	stabilityIm = np.empty(normIm.shape, dtype=np.uint8)
+	
+	for x in range(normIm.shape[1]):
+		for y in range(normIm.shape[0]):
+			areaProfile = []
+			for threshold, blobSizes, numberedRegions in zip(thresholds, thresholdBlobSizes, numberedRegionIms):
+				ptInRegion = numberedRegions[y, x]
+				#print x, y, ptInRegion
+				if ptInRegion != -1:
+					areaProfile.append(blobSizes[ptInRegion])
+				else:
+					areaProfile.append(None)
 
-		print threshold, maxRegionNum, seedInRegion, blobSi
+			#print x, y, areaProfile, numberedRegions.size
 
-		thresholdIm = normIm < threshold
-		numberedRegions, maxRegionNum = morph.label(thresholdIm, 4, 0, return_num = True)
-		misc.imshow(numberedRegions==seedInRegion)
+			scoringThresholds = 0
+			for val in areaProfile:
+				if val is None: continue
+				if val > 0.3 * numberedRegions.size: continue
+				scoringThresholds += 1
+
+			#print x, y, scoringThresholds
+
+			stabilityIm[y, x] = scoringThresholds
+
+	stabilityIm = exposure.rescale_intensity(stabilityIm)
+	misc.imshow(stabilityIm)
 

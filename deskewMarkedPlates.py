@@ -4,7 +4,7 @@ import scipy.misc as misc
 import skimage.color as color
 import skimage.exposure as exposure
 import numpy as np
-import math
+import math, pickle
 
 def RgbToPlateBackgroundScore(im):
 	#This function compares images to find number plate background colour
@@ -51,7 +51,7 @@ if __name__=="__main__":
 			xran = (bbox[0], bbox[0]+bbox[2])
 			yran = (bbox[1], bbox[1]+bbox[3])
 
-			print fina, xran, yran
+			print count, fina, xran, yran
 			bbox, bestInd, bestAngle = deskew.Deskew(im, (xran, yran))
 			rotIm = deskew.RotateAndCrop(im, (xran, yran), bestAngle)
 
@@ -68,21 +68,23 @@ if __name__=="__main__":
 			#print normContrast.min(), normContrast.max()
 
 			misc.imsave("rotIm{0}.png".format(count), normContrast)
-			
-			import matplotlib.pyplot as plt
-			dat = normContrast.reshape((normContrast.size,))
+			pickle.dump((bbox, bestAngle), open("deskew{0}.dat".format(count), "wb"), protocol=-1)
 
-			plt.subplot(3,1,1)
-			ims = plt.imshow(normContrast)
-			ims.set_cmap('gray')
+			if 0:
+				import matplotlib.pyplot as plt
+				dat = normContrast.reshape((normContrast.size,))
 
-			plt.subplot(3,1,2)
-			ims = plt.imshow(normContrast > thresh)
-			ims.set_cmap('gray')
+				plt.subplot(3,1,1)
+				ims = plt.imshow(normContrast)
+				ims.set_cmap('gray')
 
-			plt.subplot(3,1,3)
-			plt.hist(dat, bins=256)
-			plt.show()
+				plt.subplot(3,1,2)
+				ims = plt.imshow(normContrast > thresh)
+				ims.set_cmap('gray')
+
+				plt.subplot(3,1,3)
+				plt.hist(dat, bins=256)
+				plt.show()
 
 			count += 1
 
