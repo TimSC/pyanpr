@@ -91,6 +91,36 @@ def Check1DOverlap(range1, range2):
 	if min1 <= min2 and max1 >= max2: return 2 #Contained
 	return False
 
+def FindMutliResolutionMode(mod):
+	#Find mode. If no definate mode exists, rebin samples into coarse bins
+	#until a mode emerges
+
+	mod = mod[:]
+	mod.sort()
+	print mod
+	numBins = mod.max() - mod.min()
+	binMin = mod.min()
+	binMax = mod.max()
+
+	while 1:
+		bins = np.linspace(binMin, binMax, round(numBins))
+		inds = np.digitize(mod, bins)
+		freq = np.bincount(inds)
+		#print "freq", freq
+		maxFreq = freq.max()
+		maxFreqInds = np.where(freq == maxFreq)
+		#print maxFreqInds[0]
+		if len(maxFreqInds[0]) == 1:
+			maxFreqVal = bins[maxFreqInds[0]]
+			#print "result", maxFreqVal
+			return maxFreqVal
+
+		numBins /= 2.
+
+		if numBins < 0.5:
+			raise RuntimeError("Algorithm failed")
+		
+		
 def FindCharacterBboxes(numberedRegions):
 	
 	maxRegion = numberedRegions.max()
@@ -104,8 +134,14 @@ def FindCharacterBboxes(numberedRegions):
 	bboxLi = np.array(bboxLi)
 	topY = bboxLi[:,0]
 	bottomY = bboxLi[:,1]
-	medianTopY = int(round(np.median(topY)))
-	medianBottomY = int(round(np.median(bottomY)))
+	if 0:
+		topY.sort()
+		bottomY.sort()
+		print topY
+		print bottomY
+
+	medianTopY = int(round(FindMutliResolutionMode(topY)))
+	medianBottomY = int(round(FindMutliResolutionMode(bottomY)))
 
 	print "median top and bottom", medianTopY, medianBottomY
 	
@@ -166,10 +202,16 @@ if __name__ == "__main__":
 
 	bestNumberedRegions = FindBlobs(scoreIm)
 
-	#numberedRegionsIm = exposure.rescale_intensity(bestNumberedRegions != -1)
-	#misc.imshow(numberedRegionsIm)
+	numberedRegionsIm = exposure.rescale_intensity(bestNumberedRegions != -1)
+	misc.imshow(numberedRegionsIm)
 
 	charBboxes = FindCharacterBboxes(bestNumberedRegions)
 	print charBboxes
+	for cb in charBboxes:
+		print cb
+		print rotIm.shape
+		im2 = rotIm[cb[2]:cb[3]+1,:,:]
+		im3 = im2[:,cb[0]:cb[1]+1,:]
+		misc.imshow(im3)
 
 
