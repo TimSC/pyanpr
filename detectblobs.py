@@ -82,5 +82,6 @@ if __name__ == "__main__":
 			stabilityIm[y, x] = scoringThresholds
 
 	stabilityIm = exposure.rescale_intensity(stabilityIm)
-	misc.imshow(stabilityIm)
+	#misc.imshow(stabilityIm)
+	misc.imsave("test.png", stabilityIm)
 
