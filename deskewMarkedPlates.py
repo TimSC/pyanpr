@@ -75,7 +75,7 @@ if __name__=="__main__":
 			#print normContrast.min(), normContrast.max()
 
 			misc.imsave("{0}.png".format(outRootFina), normContrast)
-			pickle.dump((bbox, bestAngle), open("{0}.dat".format(outRootFina), "wb"), protocol=-1)
+			pickle.dump((bbox, bestAngle), open("{0}.deskew".format(outRootFina), "wb"), protocol=-1)
 
 			if 0:
 				import matplotlib.pyplot as plt
