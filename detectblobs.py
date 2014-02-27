@@ -91,59 +91,23 @@ def Check1DOverlap(range1, range2):
 	if min1 <= min2 and max1 >= max2: return 2 #Contained
 	return False
 
-def FindMutliResolutionMode(mod):
-	#Find mode. If no definate mode exists, rebin samples into coarse bins
-	#until a mode emerges
+def FitBboxModel(inlierBboxNum, bboxLi, imShape, numberedRegions, tolerance = 0.05):
 
-	mod = mod[:]
-	mod.sort()
-	print mod
-	numBins = mod.max() - mod.min()
-	binMin = mod.min()
-	binMax = mod.max()
+	seedBbox = bboxLi[inlierBboxNum]
 
-	while 1:
-		bins = np.linspace(binMin, binMax, round(numBins))
-		inds = np.digitize(mod, bins)
-		freq = np.bincount(inds)
-		#print "freq", freq
-		maxFreq = freq.max()
-		maxFreqInds = np.where(freq == maxFreq)
-		#print maxFreqInds[0]
-		if len(maxFreqInds[0]) == 1:
-			maxFreqVal = bins[maxFreqInds[0]]
-			#print "result", maxFreqVal
-			return maxFreqVal
+	#Find inliers for top and bottom edge
+	inliers = []
+ 	for i, bbox in enumerate(bboxLi):
+		topDiff = float(abs(seedBbox[0] - bbox[0])) / imShape[0]
+		botDiff = float(abs(seedBbox[0] - bbox[0])) / imShape[0]
+		if topDiff < tolerance and botDiff < tolerance:
+			inliers.append(i)
 
-		numBins /= 2.
-
-		if numBins < 0.5:
-			raise RuntimeError("Algorithm failed")
-		
-		
-def FindCharacterBboxes(numberedRegions):
-	
-	maxRegion = numberedRegions.max()
-	bboxLi = []
-	for rn in range(maxRegion):
-		regionIm = numberedRegions == rn
-		bbox = BlobBbox(regionIm)
-		bboxLi.append(bbox)
-
-	#The tops and bottoms of the letters are aligned
 	bboxLi = np.array(bboxLi)
-	topY = bboxLi[:,0]
-	bottomY = bboxLi[:,1]
-	if 0:
-		topY.sort()
-		bottomY.sort()
-		print topY
-		print bottomY
+	inlierBboxes = bboxLi[inliers,:]
 
-	medianTopY = int(round(FindMutliResolutionMode(topY)))
-	medianBottomY = int(round(FindMutliResolutionMode(bottomY)))
-
-	print "median top and bottom", medianTopY, medianBottomY
+	robustTopY = inlierBboxes[:,0].mean()
+	robustBottomY = inlierBboxes[:,1].mean()
 	
 	#Sort blobs by width
 	blobWidth = [(bbox[3] - bbox[2], i) for (i, bbox) in enumerate(bboxLi)]
@@ -155,7 +119,7 @@ def FindCharacterBboxes(numberedRegions):
 		bbox = bboxLi[blobNum]
 		cofg = BlobCofG(numberedRegions == blobNum)
 		#print blobWidth, blobNum, cofg
-		if cofg[0] < medianTopY or cofg[0] > medianBottomY:
+		if cofg[0] < robustTopY or cofg[0] > robustBottomY:
 			continue #Outside lettering area
 
 		#Check if this collides with existing width ranges
@@ -177,8 +141,34 @@ def FindCharacterBboxes(numberedRegions):
 
 	out = []
 	for bw in blobWidths:
-		out.append(bw + (medianTopY, medianBottomY))
+		out.append(bw + (robustTopY, robustBottomY))
 	return out
+		
+def FindCharacterBboxes(numberedRegions):
+	
+	maxRegion = numberedRegions.max()
+	bboxLi = []
+	for rn in range(maxRegion):
+		regionIm = numberedRegions == rn
+		bbox = BlobBbox(regionIm)
+		bboxLi.append(bbox)
+
+	#Try each bounding box as a seed for model fitting
+	#This is similar to ransac but we exhaustively try each starting bbox
+	
+	models = []
+	maxModelSize = None
+	maxModelSizeInd = None
+	for rn in range(maxRegion):
+		model = FitBboxModel(rn, bboxLi, numberedRegions.shape, numberedRegions)
+		models.append(model)
+		if maxModelSize is None or len(model) > maxModelSize:
+			maxModelSize = len(model)
+			maxModelSizeInd = rn
+	
+	#Return biggest model
+	#TODO find a better way to select the best
+	return models[maxModelSizeInd]
 
 if __name__ == "__main__":
 	finaIm = None
@@ -207,6 +197,7 @@ if __name__ == "__main__":
 
 	charBboxes = FindCharacterBboxes(bestNumberedRegions)
 	print charBboxes
+
 	for cb in charBboxes:
 		print cb
 		print rotIm.shape
