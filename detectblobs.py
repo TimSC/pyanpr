@@ -10,7 +10,7 @@ def DeleteBlob(regionNum, blobIm):
 	blobIm[blobLocation] = -1
 
 def FindBlobs(scoreIm, numThresholds = 100, minLetterArea = 0.002, maxLetterArea = 0.05, bboxMinArea = 0.004, bboxMaxArea = 0.1, 
-	minAspect = 0.5):
+	minAspect = 1.0):
 
 	normIm = exposure.rescale_intensity(scoreIm)
 
@@ -183,28 +183,30 @@ def FitBboxModel(inlierBboxNum, bboxLi, imShape, numberedRegions, tolerance = 0.
 		#Check if this collides with existing width ranges
 		containedWithin = []
 		partialOverlapWith = []
-		for i, bw in enumerate(blobWidths):
-			result = Check1DOverlap(bw, bbox[2:])
+		for i, (le, bw, cofgTmp) in enumerate(blobWidths):
+			result = Check1DOverlap((bw[2], bw[3]), bbox[2:])
 			if result == 1:
 				partialOverlapWith.append(i)
 			if result == 2:
 				containedWithin.append(i)
 
 		#print "b", blobNum, partialOverlapWith, containedWithin
-		if len(partialOverlapWith) > 0: continue
+		#if len(partialOverlapWith) > 0: continue
 		if len(containedWithin) > 0: continue
 		#print "c", blobNum
 
-		blobWidths.append((bbox[2], bbox[3]))
+		blobWidths.append((bbox[2], bbox, cofg))
 
 	blobWidths.sort()
 
-	out = []
-	for bw in blobWidths:
-		out.append(bw + (robustTopY, robustBottomY))
+	outBbox = []
+	outCofG = []
+	for leftEdge, bw, cofg in blobWidths:
+		outBbox.append((bw[2], bw[3], bw[0], bw[1]))
+		outCofG.append(cofg)
 	#print len(out)
-	return out
-		
+	return outBbox, outCofG
+
 def FindCharacterBboxes(numberedRegions):
 	
 	maxRegion = numberedRegions.max()
@@ -254,8 +256,8 @@ def DetectCharacters(im):
 	numberedRegionsIm = exposure.rescale_intensity(bestNumberedRegions != -1)
 	#misc.imshow(numberedRegionsIm)
 
-	charBboxes = FindCharacterBboxes(bestNumberedRegions)
-	return charBboxes
+	charBboxes, charCofG = FindCharacterBboxes(bestNumberedRegions)
+	return charBboxes, charCofG
 
 if __name__ == "__main__":
 	finaIm = None
@@ -279,9 +281,7 @@ if __name__ == "__main__":
 	rotIm = deskew.RotateAndCrop(im, bbox, angle)
 	
 	scoreIm = deskewMarkedPlates.RgbToPlateBackgroundScore(rotIm)
-	charBboxes = DetectCharacters(scoreIm)
-
-	print charBboxes
+	charBboxes, charCofG = DetectCharacters(scoreIm)
 
 	mergedChars = None
 	sepImg = None
@@ -293,6 +293,16 @@ if __name__ == "__main__":
 			mergedChars = im3
 			sepImg = np.ones((im3.shape[0], 10, 3)) * 0.5
 		else:
+			if im3.shape[0] > mergedChars.shape[0]:
+				old = mergedChars
+				mergedChars = np.zeros((im3.shape[0], mergedChars.shape[1], 3), dtype=old.dtype)
+				mergedChars[:old.shape[0], :old.shape[1], :] = old
+				sepImg = np.ones((im3.shape[0], 10, 3)) * 0.5
+			if im3.shape[0] < mergedChars.shape[0]:
+				old = im3
+				im3 = np.zeros((mergedChars.shape[0], im3.shape[1], 3), dtype=old.dtype)
+				im3[:old.shape[0], :old.shape[1], :] = old
+
 			mergedChars = np.hstack((mergedChars, sepImg, im3))
 
 	misc.imshow(mergedChars)
