@@ -18,26 +18,32 @@ def FindBlobs(scoreIm, numThresholds = 100, minLetterArea = 0.002, maxLetterArea
 
 	#Find blobs at various thresolds and calculate area
 	thresholdBlobSizes = []
+	thresholdBboxSizes = []
 	numberedRegionIms = []
 	for threshold in thresholds:
 
 		thresholdIm = normIm < threshold
 
 		blobSizes = []
-		numberedRegions, maxRegionNum = morph.label(thresholdIm, 4, 0, return_num = True)
+		bboxSizes = []
+		numberedRegions, numRegions = morph.label(thresholdIm, 4, 0, return_num = True)
 		numberedRegionIms.append(numberedRegions)
-		for regionNum in range(maxRegionNum+1):
+		for regionNum in range(numRegions):
 			regionIm = numberedRegions == regionNum
 			#print threshold, regionNum, regionIm.min(), regionIm.max(), regionIm.sum()
 			blobSizes.append(regionIm.sum())
+			
+			bboxSizes.append(BlobBbox(regionIm))
+			
 		thresholdBlobSizes.append(blobSizes)
+		thresholdBboxSizes.append(bboxSizes)
 	
 #	for threshold, blobSizes, seedInRegion in zip(thresholds, thresholdBlobSizes, seedInRegionList):
 #		blobSi = None
 #		if seedInRegion != -1:
 #			blobSi = blobSizes[seedInRegion]
 
-#		print threshold, maxRegionNum, seedInRegion, blobSi
+#		print threshold, numRegions, seedInRegion, blobSi
 
 		#thresholdIm = normIm < threshold
 		#numberedRegions, maxRegionNum = morph.label(thresholdIm, 4, 0, return_num = True)
@@ -48,15 +54,33 @@ def FindBlobs(scoreIm, numThresholds = 100, minLetterArea = 0.002, maxLetterArea
 	bestNumberedRegions = None
 	bestThresholdBlobSizes = None
 
-	for i, (threshold, blobSizes, numberedRegions) in enumerate(zip(thresholds, thresholdBlobSizes, numberedRegionIms)):
+	#For each threshold
+	for i, threshold in enumerate(thresholds):
+		blobSizes = thresholdBlobSizes[i]
+		bboxSizes = thresholdBboxSizes[i]
+		numberedRegions = numberedRegionIms[i]
+
+		#Sum the area of valid blobs
 		count = 0
 		validRegionNums = []
 		validRegionSizes = []
 		for regionNum, blobSize in enumerate(blobSizes):
-			if float(blobSize) / normIm.size < maxLetterArea:
-				count += 1
-				validRegionNums.append(regionNum)
-				validRegionSizes.append(blobSize)
+			normBlobSize = float(blobSize) / normIm.size
+			if normBlobSize < minLetterArea or normBlobSize > maxLetterArea:
+				continue
+
+			bbox = bboxSizes[regionNum]
+			normBboxArea = float(bbox[1] - bbox[0]) * (bbox[3] - bbox[2]) / bestNumberedRegions.size
+			if normBboxArea < bboxMinArea or normBboxArea > bboxMaxArea:
+				continue
+
+			bboxAspect = float(bbox[1] - bbox[0]) / (bbox[3] - bbox[2])
+			if bboxAspect < minAspect:
+				continue
+
+			count += 1
+			validRegionNums.append(regionNum)
+			validRegionSizes.append(blobSize)
 
 		#print threshold, count, len(blobSizes), validRegionSizes
 		
@@ -65,7 +89,7 @@ def FindBlobs(scoreIm, numThresholds = 100, minLetterArea = 0.002, maxLetterArea
 			bestRegionSum = areaSum
 			bestThreshold = threshold
 			bestNumberedRegions = numberedRegions
-			bestThresholdBlobSizes = thresholdBlobSizes[i]
+			bestThresholdBlobSizes = blobSizes
 
 		#if len(validRegionSizes) > 0:
 		#	import matplotlib.pyplot as plt
@@ -99,7 +123,7 @@ def FindBlobs(scoreIm, numThresholds = 100, minLetterArea = 0.002, maxLetterArea
 		#print i, blobNormArea, bboxArea, bboxAspect
 
 	#Renumber regions
-	outRegions, outMaxRegion = morph.label(bestNumberedRegions, 4, -1, return_num = True)
+	outRegions, outNumRegions = morph.label(bestNumberedRegions, 4, -1, return_num = True)
 
 	#print "best", bestThreshold, bestRegionSum
 	return outRegions
@@ -190,7 +214,7 @@ def FindCharacterBboxes(numberedRegions):
 		bbox = BlobBbox(regionIm)
 		bboxLi.append(bbox)
 
-	print maxRegion
+	#print maxRegion
 
 	#Try each bounding box as a seed for model fitting
 	#This is similar to ransac but we exhaustively try each starting bbox
@@ -242,9 +266,12 @@ if __name__ == "__main__":
 	if len(sys.argv) >= 3:
 		finaDeskew = sys.argv[2]
 
-	finaImSplit = os.path.splitext(finaIm)
+	finaImSplitPath = os.path.split(finaIm)
+	finaImSplitExt = os.path.splitext(finaImSplitPath[1])
 	if finaDeskew is None:
-		finaDeskew = finaImSplit[0] +".deskew"
+		finaDeskew = "train/" + finaImSplitExt[0] +".deskew"
+	if finaDeskew is None or not os.path.isfile(finaDeskew):
+		finaDeskew = finaImSplitPath[0] + "/" +finaImSplitExt[0] +".deskew"
 
 	im = misc.imread(finaIm)
 	bbox, angle = pickle.load(open(finaDeskew))
@@ -256,11 +283,17 @@ if __name__ == "__main__":
 
 	print charBboxes
 
+	mergedChars = None
+	sepImg = None
+
 	for cb in charBboxes:
-		print cb
-		print rotIm.shape
 		im2 = rotIm[cb[2]:cb[3]+1,:,:]
 		im3 = im2[:,cb[0]:cb[1]+1,:]
-		misc.imshow(im3)
+		if mergedChars is None:
+			mergedChars = im3
+			sepImg = np.ones((im3.shape[0], 10, 3)) * 0.5
+		else:
+			mergedChars = np.hstack((mergedChars, sepImg, im3))
 
+	misc.imshow(mergedChars)
 

@@ -36,13 +36,22 @@ if __name__=="__main__":
 		print len(charBboxes)
 
 		mergedChars = None
+		sepImg = None
+
 		for cb in charBboxes:
 			im2 = rotIm[cb[2]:cb[3]+1,:,:]
 			im3 = im2[:,cb[0]:cb[1]+1,:]
 			if mergedChars is None:
 				mergedChars = im3
+				sepImg = np.ones((im3.shape[0], 10, 3)) * 128
 			else:
-				mergedChars = np.hstack((mergedChars, im3))
+				mergedChars = np.hstack((mergedChars, sepImg, im3))
 
-		misc.imshow(mergedChars)
-		exit(0)
+		import matplotlib.pyplot as plt
+		plt.clf()
+		plt.subplot(211)
+		plt.imshow(rotIm)
+		plt.subplot(212)
+		plt.imshow(mergedChars)
+		plt.savefig(finaImSplitExt[0]+".png")
+
