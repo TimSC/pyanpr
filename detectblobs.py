@@ -254,7 +254,7 @@ def DetectCharacters(im):
 	bestNumberedRegions = FindBlobs(im)
 
 	numberedRegionsIm = exposure.rescale_intensity(bestNumberedRegions != -1)
-	#misc.imshow(numberedRegionsIm)
+	misc.imshow(numberedRegionsIm)
 
 	charBboxes, charCofG = FindCharacterBboxes(bestNumberedRegions)
 	return charBboxes, charCofG
