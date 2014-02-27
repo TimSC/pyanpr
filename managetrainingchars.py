@@ -87,6 +87,45 @@ def ViewPlate(fina, bbox, angle, charBboxes, charCofG):
 	#plt.savefig(finaImSplitExt[0]+".png")
 	plt.show()
 
+def EditPhoto(indexVal, plates):
+	photo = plates[indexVal]
+	fina = photo[0]['file']
+	objId = photo[1]['object']
+	reg = photo[1]['reg']
+	if objId not in plateCharBboxes:
+		print "Charaters not split for this plate"
+		return
+						
+	charBboxes = plateCharBboxes[objId]
+	charCofG = plateCharCofGs[objId]
+	bbox, angle	= plateCharBboxAndAngle[objId]
+
+	if objId in plateString:
+		print "Plate string:", plateString[objId]
+
+	ViewPlate(fina, bbox, angle, charBboxes, charCofG)
+
+	print "1) Plate is correct ({0})".format(reg)
+	print "2) Custom string"
+	print "3) Bad plate"
+	print "4) Delete plate string"
+	print "Blank, return to main menu"
+
+	userInput2 = raw_input(">")
+			
+	if userInput2 == "1":
+		plateString[objId] = reg
+
+	if userInput2 == "2":
+		customString = raw_input("custom string:")
+		plateString[objId] = customString
+
+	if userInput2 == "3":
+		plateString[objId] = None
+
+	if userInput2 == "4":
+		del plateString[objId]
+
 if __name__=="__main__":
 	plates = readannotation.ReadPlateAnnotation("plates.annotation")
 	count = 0
@@ -94,10 +133,13 @@ if __name__=="__main__":
 	plateCharBboxes = {}
 	plateCharCofGs = {}
 	plateCharBboxAndAngle = {}
+	plateString = {}
 
 	while 1:
 		print "1. Split characters"
 		print "2. View photo"
+		print "3. View list of photo states"
+		print "n. View next unverified photo"
 		print "l. Load"
 		print "s. Save"
 		print "q. Quit"
@@ -135,27 +177,37 @@ if __name__=="__main__":
 					plateCharBboxAndAngle[objId] = (bbox, angle)
 
 		if userInput == "2":
-			index = raw_input("view photo ({0} to {1}):".format(0, len(plates)))
-			indexVal = StrToInt(index, 0, len(plates))
-			
-			photo = plates[indexVal]
-			fina = photo[0]['file']
-			objId = photo[1]['object']
-			if objId not in plateCharBboxes:
-				print "Charaters not split for this plate"
-				continue
-						
-			charBboxes = plateCharBboxes[objId]
-			charCofG = plateCharCofGs[objId]
-			bbox, angle	= plateCharBboxAndAngle[objId]
+			index = raw_input("view photo ({0} to {1}):".format(0, len(plates)-1))
+			indexVal = StrToInt(index, 0, len(plates)-1)
+			EditPhoto(indexVal, plates)			
 
-			ViewPlate(fina, bbox, angle, charBboxes, charCofG)
+		if userInput == "3":
+			objIds = plateString.keys()
+			objIds.sort()
+			for objId in objIds:
+				for photoNum, photo in enumerate(plates):
+					foundObjId = photo[1]['object']
+					if foundObjId == objId:
+						break
+
+				print photoNum, plateString[objId]
+
+
+		if userInput == "n":
+			for photoNum, photo in enumerate(plates):
+				objId = photo[1]['object']
+				if objId in plateString:
+					continue
+				
+				EditPhoto(photoNum, plates)
+				break
 
 		if userInput == "l":
 			print "Loading"
 			plateCharBboxes = pickle.load(open("charbboxes.dat", "r"))
 			plateCharCofGs = pickle.load(open("charcofgs.dat", "r"))
 			plateCharBboxAndAngle = pickle.load(open("charbboxangle.dat", "r"))
+			plateString = pickle.load(open("charstrings.dat", "r"))
 			print "Loading done"
 
 		if userInput == "s":
@@ -163,6 +215,7 @@ if __name__=="__main__":
 			pickle.dump(plateCharBboxes, open("charbboxes.dat", "w"))
 			pickle.dump(plateCharCofGs, open("charcofgs.dat", "w"))
 			pickle.dump(plateCharBboxAndAngle, open("charbboxangle.dat", "w"))
+			pickle.dump(plateString, open("charstrings.dat", "w"))
 			print "Saving done"
 
 		if userInput == "q":
