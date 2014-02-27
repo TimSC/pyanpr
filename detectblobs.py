@@ -26,7 +26,7 @@ def FindBlobs(scoreIm, numThresholds = 100, minLetterArea = 0.002, maxLetterArea
 		blobSizes = []
 		numberedRegions, maxRegionNum = morph.label(thresholdIm, 4, 0, return_num = True)
 		numberedRegionIms.append(numberedRegions)
-		for regionNum in range(maxRegionNum):
+		for regionNum in range(maxRegionNum+1):
 			regionIm = numberedRegions == regionNum
 			#print threshold, regionNum, regionIm.min(), regionIm.max(), regionIm.sum()
 			blobSizes.append(regionIm.sum())
@@ -185,10 +185,12 @@ def FindCharacterBboxes(numberedRegions):
 	
 	maxRegion = numberedRegions.max()
 	bboxLi = []
-	for rn in range(maxRegion):
+	for rn in range(maxRegion+1):
 		regionIm = numberedRegions == rn
 		bbox = BlobBbox(regionIm)
 		bboxLi.append(bbox)
+
+	print maxRegion
 
 	#Try each bounding box as a seed for model fitting
 	#This is similar to ransac but we exhaustively try each starting bbox
@@ -196,7 +198,7 @@ def FindCharacterBboxes(numberedRegions):
 	models = []
 	maxModelSize = None
 	maxModelSizeInd = None
-	for seedRegionNum in range(maxRegion):
+	for seedRegionNum in range(maxRegion+1):
 
 		if 0:
 			regionIm = numberedRegions == seedRegionNum
@@ -226,7 +228,7 @@ def DetectCharacters(im):
 	bestNumberedRegions = FindBlobs(im)
 
 	numberedRegionsIm = exposure.rescale_intensity(bestNumberedRegions != -1)
-	misc.imshow(numberedRegionsIm)
+	#misc.imshow(numberedRegionsIm)
 
 	charBboxes = FindCharacterBboxes(bestNumberedRegions)
 	return charBboxes
