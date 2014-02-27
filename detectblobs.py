@@ -20,23 +20,51 @@ def FindBlobs(scoreIm, numThresholds = 100, minLetterArea = 0.002, maxLetterArea
 	thresholdBlobSizes = []
 	thresholdBboxSizes = []
 	numberedRegionIms = []
+	bboxBrights = []
 	for threshold in thresholds:
 
 		thresholdIm = normIm < threshold
 
 		blobSizes = []
 		bboxSizes = []
+		brightnessLi = []
 		numberedRegions, numRegions = morph.label(thresholdIm, 4, 0, return_num = True)
 		numberedRegionIms.append(numberedRegions)
 		for regionNum in range(numRegions):
+			#Gather statistics of blob
 			regionIm = numberedRegions == regionNum
-			#print threshold, regionNum, regionIm.min(), regionIm.max(), regionIm.sum()
+			bbox = BlobBbox(regionIm)
 			blobSizes.append(regionIm.sum())
 			
 			bboxSizes.append(BlobBbox(regionIm))
+
+			#Extract patch
+			im2 = normIm[bbox[0]-1:bbox[1]+2,:]
+			im3 = im2[:,bbox[2]-1:bbox[3]+2]
+
+			stencil2 = regionIm[bbox[0]-1:bbox[1]+2,:]
+			stencil3 = stencil2[:,bbox[2]-1:bbox[3]+2]
+
+			notArea = np.logical_not(stencil3)
+			areaVal = stencil3.sum()
+			notAreaVal = notArea.sum()
+			if areaVal != 0.:
+				lo = (im3 * stencil3).sum() / areaVal
+			else:
+				lo = 0.5
+			if notAreaVal != 0.:
+				hi = (im3 * notArea).sum() / notAreaVal
+			else:
+				hi = 0.5
+
+			brightnessLi.append((lo, hi))
+
+			#print threshold, regionNum, regionIm.min(), regionIm.max(), regionIm.sum()
+
 			
 		thresholdBlobSizes.append(blobSizes)
 		thresholdBboxSizes.append(bboxSizes)
+		bboxBrights.append(brightnessLi)
 	
 #	for threshold, blobSizes, seedInRegion in zip(thresholds, thresholdBlobSizes, seedInRegionList):
 #		blobSi = None
@@ -59,6 +87,7 @@ def FindBlobs(scoreIm, numThresholds = 100, minLetterArea = 0.002, maxLetterArea
 		blobSizes = thresholdBlobSizes[i]
 		bboxSizes = thresholdBboxSizes[i]
 		numberedRegions = numberedRegionIms[i]
+		brightnessLi = bboxBrights[i]
 
 		#Sum the area of valid blobs
 		count = 0
@@ -82,11 +111,32 @@ def FindBlobs(scoreIm, numThresholds = 100, minLetterArea = 0.002, maxLetterArea
 			validRegionNums.append(regionNum)
 			validRegionSizes.append(blobSize)
 
-		#print threshold, count, len(blobSizes), validRegionSizes
-		
+		brightnessLi = np.array(brightnessLi)
+		lo = 128.
+		hi = 128.
+		if brightnessLi.shape[0] > 0:
+			lo, hi = brightnessLi[:,0].mean(), brightnessLi[:,1].mean()
+
+		#Big areas are good
 		areaSum = sum(validRegionSizes)
-		if bestThreshold is None or areaSum > bestRegionSum:
-			bestRegionSum = areaSum
+
+		#High contast separation is good
+		contrastScore = (hi - lo)
+
+		#The threshold should be between light and dark
+		thresholdLoHiScore = 0.
+		if (hi - lo) != 0.:
+			thresholdLoHi = (threshold - lo) / (hi - lo)
+			thresholdLoHiScore = 1. - abs(thresholdLoHi - 0.5)
+			if thresholdLoHiScore < 0.:
+				thresholdLoHiScore = 0.
+		
+		overallScore = areaSum * contrastScore * thresholdLoHiScore
+
+		#print threshold, overallScore, areaSum, thresholdLoHi, lo, hi
+
+		if bestThreshold is None or overallScore > bestRegionSum:
+			bestRegionSum = overallScore
 			bestThreshold = threshold
 			bestNumberedRegions = numberedRegions
 			bestThresholdBlobSizes = blobSizes
@@ -254,7 +304,7 @@ def DetectCharacters(im):
 	bestNumberedRegions = FindBlobs(im)
 
 	numberedRegionsIm = exposure.rescale_intensity(bestNumberedRegions != -1)
-	misc.imshow(numberedRegionsIm)
+	#misc.imshow(numberedRegionsIm)
 
 	charBboxes, charCofG = FindCharacterBboxes(bestNumberedRegions)
 	return charBboxes, charCofG
