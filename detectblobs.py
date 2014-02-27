@@ -170,6 +170,15 @@ def FindCharacterBboxes(numberedRegions):
 	#TODO find a better way to select the best
 	return models[maxModelSizeInd]
 
+def DetectCharacters(im):
+	bestNumberedRegions = FindBlobs(im)
+
+	numberedRegionsIm = exposure.rescale_intensity(bestNumberedRegions != -1)
+	misc.imshow(numberedRegionsIm)
+
+	charBboxes = FindCharacterBboxes(bestNumberedRegions)
+	return charBboxes
+
 if __name__ == "__main__":
 	finaIm = None
 	finaDeskew = None
@@ -189,13 +198,8 @@ if __name__ == "__main__":
 	rotIm = deskew.RotateAndCrop(im, bbox, angle)
 	
 	scoreIm = deskewMarkedPlates.RgbToPlateBackgroundScore(rotIm)
+	charBboxes = DetectCharacters(scoreIm)
 
-	bestNumberedRegions = FindBlobs(scoreIm)
-
-	numberedRegionsIm = exposure.rescale_intensity(bestNumberedRegions != -1)
-	misc.imshow(numberedRegionsIm)
-
-	charBboxes = FindCharacterBboxes(bestNumberedRegions)
 	print charBboxes
 
 	for cb in charBboxes:

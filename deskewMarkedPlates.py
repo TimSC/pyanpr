@@ -4,7 +4,7 @@ import scipy.misc as misc
 import skimage.color as color
 import skimage.exposure as exposure
 import numpy as np
-import math, pickle
+import math, pickle, os
 
 def RgbToPlateBackgroundScore(im):
 	#This function compares images to find number plate background colour
@@ -40,9 +40,16 @@ if __name__=="__main__":
 	plates = readannotation.ReadPlateAnnotation("plates.annotation")
 	count = 0
 
+	if not os.path.exists("train"):
+		os.mkdir("train")
+
 	for photo in plates:
 		fina = photo[0]['file']
 		im = misc.imread(fina)
+
+		finaImSplitPath = os.path.split(fina)
+		finaImSplitExt = os.path.splitext(finaImSplitPath[1])
+		outRootFina = "train" + "/" + finaImSplitExt[0]
 
 		for plate in photo[1:]:
 			bbox = plate['bbox']
@@ -67,8 +74,8 @@ if __name__=="__main__":
 			#normContrast = (normContrast > 0.5)
 			#print normContrast.min(), normContrast.max()
 
-			misc.imsave("rotIm{0}.png".format(count), normContrast)
-			pickle.dump((bbox, bestAngle), open("deskew{0}.dat".format(count), "wb"), protocol=-1)
+			misc.imsave("{0}.png".format(outRootFina), normContrast)
+			pickle.dump((bbox, bestAngle), open("{0}.dat".format(outRootFina), "wb"), protocol=-1)
 
 			if 0:
 				import matplotlib.pyplot as plt
