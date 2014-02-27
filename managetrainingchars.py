@@ -1,6 +1,7 @@
 
 import readannotation, os, pickle
 import scipy.misc as misc
+import deskew, deskewMarkedPlates, detectblobs
 
 if __name__=="__main__":
 	plates = readannotation.ReadPlateAnnotation("plates.annotation")
@@ -25,4 +26,9 @@ if __name__=="__main__":
 			print "Cannot find deskew file for", fina
 			continue
 
-		print bbox
+		rotIm = deskew.RotateAndCrop(im, bbox, angle)	
+		scoreIm = deskewMarkedPlates.RgbToPlateBackgroundScore(rotIm)
+		charBboxes = detectblobs.DetectCharacters(scoreIm)
+
+		print len(charBboxes)
+
