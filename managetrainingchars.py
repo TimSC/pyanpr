@@ -126,6 +126,14 @@ def EditPhoto(indexVal, plates):
 	if userInput2 == "4":
 		del plateString[objId]
 
+def StripInternalSpaces(strIn):
+	if strIn is None: return None
+	out = []
+	for ch in strIn:
+		if ch != " ":
+			out.append(ch)
+	return "".join(out)
+
 if __name__=="__main__":
 	plates = readannotation.ReadPlateAnnotation("plates.annotation")
 	count = 0
@@ -190,7 +198,13 @@ if __name__=="__main__":
 					if foundObjId == objId:
 						break
 
-				print photoNum, plateString[objId]
+				bboxes = plateCharBboxes[objId]
+				plateStr = plateString[objId]
+				plateStrStrip = StripInternalSpaces(plateStr)
+
+				print photoNum, plateStrStrip, len(bboxes)
+				if plateStrStrip is not None and len(plateStrStrip) != len(bboxes):
+					print "Bbox number mismatch"
 
 
 		if userInput == "n":
