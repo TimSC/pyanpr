@@ -29,7 +29,23 @@ def SplitCharacters(fina, bbox, angle):
 
 	return charBboxes, charCofG
 
-def Stuff():
+def StrToInt(strIn, minVal = None, maxVal = None):
+	try:
+		startIndexVal = int(strIn)
+		if minVal is not None and startIndexVal < minVal:
+			startIndexVal = minVal
+		if maxVal is not None and startIndexVal > maxVal:
+			startIndexVal = maxVal
+	except:
+		startIndexVal = None
+	return startIndexVal
+
+def ViewPlate(fina, bbox, angle, charBboxes, charCofG):
+
+	print fina
+	im = misc.imread(fina)
+	rotIm = deskew.RotateAndCrop(im, bbox, angle)	
+	scoreIm = deskewMarkedPlates.RgbToPlateBackgroundScore(rotIm)
 
 	print len(charBboxes)
 	rotImMod = rotIm.copy()
@@ -68,7 +84,8 @@ def Stuff():
 	plt.imshow(rotIm)
 	plt.subplot(212)
 	plt.imshow(mergedChars)
-	plt.savefig(finaImSplitExt[0]+".png")
+	#plt.savefig(finaImSplitExt[0]+".png")
+	plt.show()
 
 if __name__=="__main__":
 	plates = readannotation.ReadPlateAnnotation("plates.annotation")
@@ -80,6 +97,8 @@ if __name__=="__main__":
 
 	while 1:
 		print "1. Split characters"
+		print "2. View photo"
+		print "l. Load"
 		print "s. Save"
 		print "q. Quit"
 
@@ -90,24 +109,11 @@ if __name__=="__main__":
 			startIndex = raw_input("start index:")
 			endIndex = raw_input("end index:")
 
-			try:
-				startIndexVal = int(startIndex)
-				if startIndexVal < 0:
-					startIndexVal = 0
-			except:
-				startIndexVal = None
-
-			if startIndex == "":
+			startIndexVal = StrToInt(startIndex)
+			if startIndex == None:
 				startIndexVal = 0
-
-			try:
-				endIndexVal = int(endIndex)
-				if endIndexVal < 0:
-					endIndexVal = 0
-			except:
-				endIndexVal = None
-		
-			if endIndex == "":
+			endIndexVal = StrToInt(endIndex)
+			if endIndexVal == None:
 				endIndexVal = len(plates)
 		
 			if startIndexVal is not None and endIndexVal is not None:
@@ -127,6 +133,30 @@ if __name__=="__main__":
 					plateCharBboxes[objId] = charBboxes
 					plateCharCofGs[objId] = charCofG
 					plateCharBboxAndAngle[objId] = (bbox, angle)
+
+		if userInput == "2":
+			index = raw_input("view photo ({0} to {1}):".format(0, len(plates)))
+			indexVal = StrToInt(index, 0, len(plates))
+			
+			photo = plates[indexVal]
+			fina = photo[0]['file']
+			objId = photo[1]['object']
+			if objId not in plateCharBboxes:
+				print "Charaters not split for this plate"
+				continue
+						
+			charBboxes = plateCharBboxes[objId]
+			charCofG = plateCharCofGs[objId]
+			bbox, angle	= plateCharBboxAndAngle[objId]
+
+			ViewPlate(fina, bbox, angle, charBboxes, charCofG)
+
+		if userInput == "l":
+			print "Loading"
+			plateCharBboxes = pickle.load(open("charbboxes.dat", "r"))
+			plateCharCofGs = pickle.load(open("charcofgs.dat", "r"))
+			plateCharBboxAndAngle = pickle.load(open("charbboxangle.dat", "r"))
+			print "Loading done"
 
 		if userInput == "s":
 			print "Saving"
