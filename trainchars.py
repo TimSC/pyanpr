@@ -95,8 +95,11 @@ if __name__=="__main__":
 			patch = ExtractPatch(rotIm, (cCofG[1]-margin, cCofG[1]+margin, cCofG[0]-margin, cCofG[0]+margin))
 			
 			#Scale height
+			#patchWidth = int(round(patch.shape[0]*scaling))
+			patchWidth = targetMargin * 2
+
 			resizedPatch = misc.imresize(patch, (targetMargin * 2, 
-				int(round(patch.shape[0]*scaling)), patch.shape[2]))
+				patchWidth, patch.shape[2]))
 
 			#normIm = exposure.rescale_intensity(resizedPatch)
 			normIm = resizedPatch
