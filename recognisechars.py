@@ -5,7 +5,8 @@ import numpy as np
 import skimage.exposure as exposure
 from PIL import Image
 
-#Average character colleration of intensity			0.670
+#Average character correlation of intensity			0.670
+#Max character correlation of intensity				0.661
 
 def CompareExampleToTraining(bwImg, preProcessedModel):
 
@@ -21,7 +22,7 @@ def CompareExampleToTraining(bwImg, preProcessedModel):
 			scores.append(score)
 		scores = np.array(scores)
 		#print "Compare to", ch, scores
-		charScores.append((scores.mean(), ch))
+		charScores.append((scores.max(), ch))
 
 	charScores.sort(reverse=True)
 	for score, ch in charScores[:5]:
