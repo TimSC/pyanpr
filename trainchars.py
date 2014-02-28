@@ -1,64 +1,9 @@
-import readannotation, os, pickle, random, cStringIO
+import readannotation, os, pickle, random, cStringIO, managetrainingchars
 import scipy.misc as misc
 import deskew, deskewMarkedPlates, detectblobs
 import numpy as np
 import skimage.exposure as exposure
 from PIL import Image
-
-def ViewPlate(fina, bbox, angle, charBboxes, charCofG):
-
-	print fina
-	im = misc.imread(fina)
-	rotIm = deskew.RotateAndCrop(im, bbox, angle)	
-	scoreIm = deskewMarkedPlates.RgbToPlateBackgroundScore(rotIm)
-
-	print len(charBboxes)
-	rotImMod = rotIm.copy()
-
-	for cg in charCofG:
-		try:
-			rotImMod[round(cg[0]), round(cg[1]), :] = (128, 128, 250)
-		except:
-			pass
-
-	mergedChars = None
-	sepImg = None
-
-	for cb in charBboxes:
-		im2 = rotImMod[cb[2]:cb[3]+1,:,:]
-		im3 = im2[:,cb[0]:cb[1]+1,:]
-		if mergedChars is None:
-			mergedChars = im3
-			sepImg = np.ones((im3.shape[0], 10, 3)) * 0.5
-		else:
-			if im3.shape[0] > mergedChars.shape[0]:
-				old = mergedChars
-				mergedChars = np.zeros((im3.shape[0], mergedChars.shape[1], 3), dtype=old.dtype)
-				mergedChars[:old.shape[0], :old.shape[1], :] = old
-				sepImg = np.ones((im3.shape[0], 10, 3)) * 0.5
-			if im3.shape[0] < mergedChars.shape[0]:
-				old = im3
-				im3 = np.zeros((mergedChars.shape[0], im3.shape[1], 3), dtype=old.dtype)
-				im3[:old.shape[0], :old.shape[1], :] = old
-
-			mergedChars = np.hstack((mergedChars, sepImg, im3))
-
-	import matplotlib.pyplot as plt
-	plt.clf()
-	plt.subplot(211)
-	plt.imshow(rotIm)
-	plt.subplot(212)
-	plt.imshow(mergedChars)
-	#plt.savefig(finaImSplitExt[0]+".png")
-	plt.show()
-
-def StripInternalSpaces(strIn):
-	if strIn is None: return None
-	out = []
-	for ch in strIn:
-		if ch != " ":
-			out.append(ch)
-	return "".join(out)
 
 def ExtractPatch(image, bbox):
 	bbox = map(int,map(round,bbox))
@@ -129,7 +74,7 @@ if __name__=="__main__":
 
 		if plateStr is None: continue #Bad plate
 
-		plateStrStrip = StripInternalSpaces(plateStr)
+		plateStrStrip = managetrainingchars.StripInternalSpaces(plateStr)
 
 		print photoNum, plateStrStrip, len(bboxes)
 		if plateStrStrip is not None and len(plateStrStrip) != len(bboxes):
@@ -144,15 +89,17 @@ if __name__=="__main__":
 			originalHeight = bbx[3] - bbx[2]
 			scaling = 50. / originalHeight
 			print scaling
-			margin = 40. / scaling
+			targetMargin = 40
+			margin = targetMargin / scaling
 
 			patch = ExtractPatch(rotIm, (cCofG[1]-margin, cCofG[1]+margin, cCofG[0]-margin, cCofG[0]+margin))
 			
 			#Scale height
-			resizedPatch = misc.imresize(patch, (int(round(patch.shape[0]*scaling)), 
-				int(round(patch.shape[1]*scaling)), patch.shape[2]))
+			resizedPatch = misc.imresize(patch, (targetMargin * 2, 
+				int(round(patch.shape[0]*scaling)), patch.shape[2]))
 
-			normIm = exposure.rescale_intensity(resizedPatch)
+			#normIm = exposure.rescale_intensity(resizedPatch)
+			normIm = resizedPatch
 
 			print normIm.shape
 			#misc.imshow(normIm)
