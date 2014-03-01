@@ -773,7 +773,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/IMG_20140220_154607.jpg
 
 object: 141
 bbox: 577,1425,407,133
-reg: PI07 ZRU
+reg: PI07 XRU
 
 ########## NEW FILE ##########
 file: /home/tim/kinatomic/datasets/anpr-plates/IMG_20140220_154643.jpg
