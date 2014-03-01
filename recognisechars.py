@@ -27,12 +27,14 @@ def CompareExampleToTraining(bwImg, preProcessedModel):
 
 			flatExample = example.reshape(example.size)
 			flatBwImg = bwImg.reshape(bwImg.size)
-			if 1:
+			if 0:
 				den = np.abs(flatExample-flatBwImg).mean()
 				if den > 0.:
 					score = 1. / den
 				else:
 					score = 100.
+			if 1:
+				score = np.corrcoef(flatExample, flatBwImg)[0,1]
 			
 			charScores.append((score, ch, example))
 
