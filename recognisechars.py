@@ -4,14 +4,18 @@ import deskew, deskewMarkedPlates, detectblobs
 import numpy as np
 import skimage.exposure as exposure
 from PIL import Image
+import skimage.filter as filt
 
 #80x80 Average character correlation of intensity			0.670
 #80x80 Max character correlation of intensity				0.661
 #80x80 Min template difference								0.557
 #80x80 Mean character template difference					0.600
 #40x40 Min template difference 								0.852
+#40x40 Max character correlation with blur					0.916
 
 def CompareExampleToTraining(bwImg, preProcessedModel):
+
+	bwImg = filt.gaussian_filter(bwImg, 2.)
 
 	bwImg = bwImg[20:-20,:]
 	bwImg = bwImg[:,20:-20]
@@ -22,6 +26,7 @@ def CompareExampleToTraining(bwImg, preProcessedModel):
 		examples = preProcessedModel[ch]
 		for example in examples:
 			#Tight crop
+			example = filt.gaussian_filter(example, 2.)
 			example = example[20:-20,:]
 			example = example[:,20:-20]
 
