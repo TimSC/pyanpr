@@ -5,34 +5,47 @@ import numpy as np
 import skimage.exposure as exposure
 from PIL import Image
 
-#Average character correlation of intensity			0.670
-#Max character correlation of intensity				0.661
-#Min template difference							0.557
-#Mean character template difference					0.600
+#80x80 Average character correlation of intensity			0.670
+#80x80 Max character correlation of intensity				0.661
+#80x80 Min template difference								0.557
+#80x80 Mean character template difference					0.600
+#40x40 Min template difference 								0.852
 
 def CompareExampleToTraining(bwImg, preProcessedModel):
+
+	bwImg = bwImg[20:-20,:]
+	bwImg = bwImg[:,20:-20]
 
 	charScores = []
 	for ch in preProcessedModel:
 		
 		examples = preProcessedModel[ch]
-		scores = []
 		for example in examples:
+			#Tight crop
+			example = example[20:-20,:]
+			example = example[:,20:-20]
+
 			flatExample = example.reshape(example.size)
 			flatBwImg = bwImg.reshape(bwImg.size)
-			den = np.abs(flatExample-flatBwImg).mean()
-			if den > 0.:
-				score = 1. / den
-			else:
-				score = 100.
-			scores.append(score)
-		scores = np.array(scores)
-		#print "Compare to", ch, scores
-		charScores.append((scores.mean(), ch))
+			if 1:
+				den = np.abs(flatExample-flatBwImg).mean()
+				if den > 0.:
+					score = 1. / den
+				else:
+					score = 100.
+			
+			charScores.append((score, ch, example))
 
 	charScores.sort(reverse=True)
-	for score, ch in charScores[:5]:
+	for score, ch, example in charScores[:5]:
 		print ch, score
+
+	if 0:
+		mergeImg = bwImg.copy()
+		for score, ch, example in charScores[:10]:
+			mergeImg = np.hstack((mergeImg, example))
+		misc.imshow(mergeImg)
+
 	return charScores
 
 if __name__=="__main__":
