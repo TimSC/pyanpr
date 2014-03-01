@@ -7,6 +7,8 @@ from PIL import Image
 
 #Average character correlation of intensity			0.670
 #Max character correlation of intensity				0.661
+#Min template difference							0.557
+#Mean character template difference					0.600
 
 def CompareExampleToTraining(bwImg, preProcessedModel):
 
@@ -18,11 +20,15 @@ def CompareExampleToTraining(bwImg, preProcessedModel):
 		for example in examples:
 			flatExample = example.reshape(example.size)
 			flatBwImg = bwImg.reshape(bwImg.size)
-			score = np.corrcoef(flatExample, flatBwImg)[0,1]
+			den = np.abs(flatExample-flatBwImg).mean()
+			if den > 0.:
+				score = 1. / den
+			else:
+				score = 100.
 			scores.append(score)
 		scores = np.array(scores)
 		#print "Compare to", ch, scores
-		charScores.append((scores.max(), ch))
+		charScores.append((scores.mean(), ch))
 
 	charScores.sort(reverse=True)
 	for score, ch in charScores[:5]:
