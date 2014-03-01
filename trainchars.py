@@ -118,7 +118,7 @@ if __name__=="__main__":
 			if modChar == "I": modChar = "1"
 			if modChar == "O": modChar = "0"
 
-			model[char].append(binImage.getvalue())
+			model[char].append((binImage.getvalue(), objId))
 
 	pickle.dump((trainObjIds, testObjIds, model), open("charmodel.dat", "wb"), protocol=-1)
 

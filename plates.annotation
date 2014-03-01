@@ -117,7 +117,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/IMG_20140219_105956.jpg
 
 object: 17
 bbox: 510,1487,433,167
-reg: BG08 ZDD
+reg: BG08 XDD
 
 ########## NEW FILE ##########
 file: /home/tim/kinatomic/datasets/anpr-plates/IMG_20140219_110009.jpg
@@ -424,7 +424,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/IMG_20140219_145651.jpg
 
 object: 52
 bbox: 861,1373,483,205
-reg: SO10 JBB
+reg: SO10 JJB
 
 ########## NEW FILE ##########
 file: /home/tim/kinatomic/datasets/anpr-plates/IMG_20140219_145703.jpg
@@ -487,7 +487,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/IMG_20140219_150114.jpg
 
 object: 61
 bbox: 760,1259,404,105
-reg: P506 WCD
+reg: P506 VCD
 
 ########## NEW FILE ##########
 file: /home/tim/kinatomic/datasets/anpr-plates/IMG_20140219_150125.jpg
@@ -773,7 +773,7 @@ file: /home/tim/kinatomic/datasets/anpr-plates/IMG_20140220_154607.jpg
 
 object: 141
 bbox: 577,1425,407,133
-reg: PI07 XRU
+reg: PI07 ZRU
 
 ########## NEW FILE ##########
 file: /home/tim/kinatomic/datasets/anpr-plates/IMG_20140220_154643.jpg

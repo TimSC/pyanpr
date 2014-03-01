@@ -13,7 +13,7 @@ import skimage.filter as filt
 #40x40 Min template difference 								0.852
 #40x40 Max character correlation with blur					0.916
 
-def CompareExampleToTraining(bwImg, preProcessedModel):
+def CompareExampleToTraining(bwImg, preProcessedModel, getCandidates = False):
 
 	bwImg = filt.gaussian_filter(bwImg, 2.)
 
@@ -24,7 +24,7 @@ def CompareExampleToTraining(bwImg, preProcessedModel):
 	for ch in preProcessedModel:
 		
 		examples = preProcessedModel[ch]
-		for example in examples:
+		for example, sourceObjId in examples:
 			#Tight crop
 			example = filt.gaussian_filter(example, 2.)
 			example = example[20:-20,:]
@@ -41,19 +41,36 @@ def CompareExampleToTraining(bwImg, preProcessedModel):
 			if 1:
 				score = np.corrcoef(flatExample, flatBwImg)[0,1]
 			
-			charScores.append((score, ch, example))
+			charScores.append((score, ch, example, sourceObjId))
 
 	charScores.sort(reverse=True)
-	for score, ch, example in charScores[:5]:
-		print ch, score
+	for score, ch, example, sourceObjId in charScores[:5]:
+		annot = GetAnnotForObjId(plates, sourceObjId)
 
-	if 0:
+		print ch, score, sourceObjId, annot['reg']
+
+	mergeImg = None
+	if getCandidates:
 		mergeImg = bwImg.copy()
-		for score, ch, example in charScores[:10]:
+		for score, ch, example, sourceObjId in charScores[:10]:
 			mergeImg = np.hstack((mergeImg, example))
-		misc.imshow(mergeImg)
+		#misc.imshow(mergeImg)
 
-	return charScores
+	return charScores, mergeImg
+
+def GetPhotoForObjId(plates, objId):
+	for photo in plates:
+		for annot in photo[1:]:
+			if annot['object'] == objId:
+				return photo
+	return None
+
+def GetAnnotForObjId(plates, objId):
+	for photo in plates:
+		for annot in photo[1:]:
+			if annot['object'] == objId:
+				return annot
+	return None
 
 if __name__=="__main__":
 	plates = readannotation.ReadPlateAnnotation("plates.annotation")
@@ -76,16 +93,17 @@ if __name__=="__main__":
 	print "Preprocessing training data"
 	#Preprocess training data
 	preProcessedModel = {}
+
 	for char in model:
 		#print char
 		procChar = []
-		for example in model[char]:
+		for example, sourceObjId in model[char]:
 			img = Image.open(cStringIO.StringIO(example))
 			imgArr = np.array(img)
 			imgArr = exposure.rescale_intensity(imgArr)
 			bwImg = deskewMarkedPlates.RgbToPlateBackgroundScore(imgArr)
 			#print bwImg.shape
-			procChar.append(bwImg)
+			procChar.append((bwImg, sourceObjId))
 		preProcessedModel[char] = procChar
 	print "Preprocessing done"
 
@@ -134,7 +152,7 @@ if __name__=="__main__":
 			bwImg = deskewMarkedPlates.RgbToPlateBackgroundScore(normIm)
 
 			#Compare to stored examples
-			charScores = CompareExampleToTraining(bwImg, preProcessedModel)
+			charScores, candidateImgs = CompareExampleToTraining(bwImg, preProcessedModel, True)
 
 			expectedCharFiltered = expectedChar
 			bestCharFiltered = charScores[0][1]
@@ -144,9 +162,16 @@ if __name__=="__main__":
 			if bestCharFiltered == "O": bestCharFiltered = "0"
 
 			if expectedChar is not None:
-				if charScores[0][1] == expectedChar:
+				if bestCharFiltered == expectedCharFiltered:
 					hit += 1
 				else:
+					#misc.imshow(candidateImgs)
+					misc.imsave("miss{0}.png".format(miss), candidateImgs)
+					missFi = open("miss{0}.txt".format(miss), "wt")
+					missFi.write("{0},{1},{2},{3}\n".format(reg, expectedChar, cCofG, bbx))
+					for sc in charScores[:5]:
+						annot = GetAnnotForObjId(plates, sc[3])
+						missFi.write("{0},{1}\n".format(sc, annot['reg']))
 					miss += 1
 
 		print "Plate", plateCount, "of", len(testObjIds)
