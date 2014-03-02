@@ -298,6 +298,8 @@ def FindCharacterBboxes(numberedRegions):
 
 	#Return biggest model
 	#TODO find a better way to select the best
+	if maxModelSizeInd is None:
+		return None, None
 	return models[maxModelSizeInd]
 
 def DetectCharacters(im):

@@ -72,25 +72,17 @@ def GetAnnotForObjId(plates, objId):
 				return annot
 	return None
 
-if __name__=="__main__":
-	plates = readannotation.ReadPlateAnnotation("plates.annotation")
-	count = 0
-	print "Num photos", len(plates)
-	plateCharBboxes = {}
-	plateCharCofGs = {}
-	plateCharBboxAndAngle = {}
-	plateString = {}
-	model = {}
-
-	print "Loading"
+def LoadModel():
 	plateCharBboxes = pickle.load(open("charbboxes.dat", "r"))
 	plateCharCofGs = pickle.load(open("charcofgs.dat", "r"))
 	plateCharBboxAndAngle = pickle.load(open("charbboxangle.dat", "r"))
 	plateString = pickle.load(open("charstrings.dat", "r"))
 	trainObjIds, testObjIds, model = pickle.load(open("charmodel.dat", "rb"))
-	print "Loading done"
+	return plateCharBboxes, plateCharCofGs, plateCharBboxAndAngle, \
+		plateString, trainObjIds, testObjIds, model
 
-	print "Preprocessing training data"
+def PreprocessTraining(model):
+
 	#Preprocess training data
 	preProcessedModel = {}
 
@@ -105,6 +97,40 @@ if __name__=="__main__":
 			#print bwImg.shape
 			procChar.append((bwImg, sourceObjId))
 		preProcessedModel[char] = procChar
+	return preProcessedModel
+
+def ProcessPatch(rotIm, bbx):
+
+	originalHeight = bbx[3] - bbx[2]
+	scaling = 50. / originalHeight
+	targetMargin = 40
+	margin = targetMargin / scaling
+
+	patch = trainchars.ExtractPatch(rotIm, (cCofG[1]-margin, cCofG[1]+margin, cCofG[0]-margin, cCofG[0]+margin))
+			
+	#Scale height
+	#height = int(round(patch.shape[0]*scaling))
+	#width = int(round(patch.shape[1]*scaling))
+	resizedPatch = misc.imresize(patch, (2*targetMargin, 
+		2*targetMargin, patch.shape[2]))
+
+	normIm = exposure.rescale_intensity(resizedPatch)
+	bwImg = deskewMarkedPlates.RgbToPlateBackgroundScore(normIm)
+
+	#Compare to stored examples
+	charScores, candidateImgs = CompareExampleToTraining(bwImg, preProcessedModel, True)
+	return charScores, candidateImgs
+
+if __name__=="__main__":
+	plates = readannotation.ReadPlateAnnotation("plates.annotation")
+	count = 0
+	print "Num photos", len(plates)
+
+	print "Loading and Preprocessing training data"
+	plateCharBboxes, plateCharCofGs, plateCharBboxAndAngle, \
+		plateString, trainObjIds, testObjIds, model = LoadModel()
+
+	preProcessedModel = PreprocessTraining(model)
 	print "Preprocessing done"
 
 	#Iterate over test plates
@@ -135,24 +161,7 @@ if __name__=="__main__":
 				expectedChar = plateStrStrip[i]
 
 			print reg, expectedChar, cCofG, bbx
-			originalHeight = bbx[3] - bbx[2]
-			scaling = 50. / originalHeight
-			targetMargin = 40
-			margin = targetMargin / scaling
-
-			patch = trainchars.ExtractPatch(rotIm, (cCofG[1]-margin, cCofG[1]+margin, cCofG[0]-margin, cCofG[0]+margin))
-			
-			#Scale height
-			#height = int(round(patch.shape[0]*scaling))
-			#width = int(round(patch.shape[1]*scaling))
-			resizedPatch = misc.imresize(patch, (2*targetMargin, 
-				2*targetMargin, patch.shape[2]))
-
-			normIm = exposure.rescale_intensity(resizedPatch)
-			bwImg = deskewMarkedPlates.RgbToPlateBackgroundScore(normIm)
-
-			#Compare to stored examples
-			charScores, candidateImgs = CompareExampleToTraining(bwImg, preProcessedModel, True)
+			charScores, candidateImgs = ProcessPatch(rotIm, bbx)
 
 			expectedCharFiltered = expectedChar
 			bestCharFiltered = charScores[0][1]

@@ -35,22 +35,25 @@ def ScoreUsingAspect(numberedRegions, vis = None):
 			score = 1. / aspectErr
 		else:
 			score = 1e-6
-		print regionNum, score, aspect, aspectErr
+		#print regionNum, score, aspect, aspectErr
 
 		regionScores.append([score, regionNum, bbox])
 
 	if vis is not None:
 		maxScore = max([i[0] for i in regionScores])
-		visCandidates = np.zeros(binIm.shape)
+		visCandidates = np.zeros(numberedRegions.shape)
 		for regionNum, score in enumerate(regionScores):
 			region = (numberedRegions == regionNum) #Isolate region
 
 			visCandidates += region * (score[0] / maxScore) * 255.
 			misc.imsave(vis, visCandidates)
 
+	regionScores.sort()
+	regionScores.reverse()
+
 	return regionScores
 
-def ScoreUsingSize(numberedRegions, imshape, vis = None):
+def ScoreUsingSize(numberedRegions, vis = None):
 	#Use second criteria (of x and y range of region) to select candidates
 	maxRegionNum = numberedRegions.max()
 
@@ -66,8 +69,8 @@ def ScoreUsingSize(numberedRegions, imshape, vis = None):
 
 		xwtarget = 0.34
 		ywtarget = 0.07
-		xw = float(xr)/imshape[1]
-		yw = float(yr)/imshape[0]
+		xw = float(xr)/numberedRegions.shape[1]
+		yw = float(yr)/numberedRegions.shape[0]
 		xerr = abs(xw - xwtarget)
 		yerr = abs(yw - ywtarget)
 		if xerr < 0.001:
@@ -75,30 +78,24 @@ def ScoreUsingSize(numberedRegions, imshape, vis = None):
 		if yerr < 0.001:
 			yerr = 0.001
 		score = (1. / xerr) * (1. / yerr)
-		print regionNum, xw, yw, score
+		#print regionNum, xw, yw, score
 		regionScores2.append([score, regionNum, bbox])
 
 	if vis is not None:
 		maxScore = max([i[0] for i in regionScores2])
-		visCandidates = np.zeros(binIm.shape)
+		visCandidates = np.zeros(numberedRegions.shape)
 		for regionNum, score in enumerate(regionScores2):
 			region = (numberedRegions == regionNum) #Isolate region
 
 			visCandidates += region * (score[0] / maxScore) * 255.
 			misc.imsave(vis, visCandidates)
 
+	regionScores2.sort()
+	regionScores2.reverse()
+
 	return regionScores2
 
-if __name__ == "__main__":
-
-	fina = None
-	if len(sys.argv) >= 2:
-		fina = sys.argv[1]
-	if fina is None:
-		print "Specify input image on command line"
-		exit(0)
-
-	im = misc.imread(fina)
+def ProcessImage(im):
 
 	#Resize to 800 pixels max edge size
 	targetDim = 800
@@ -147,13 +144,25 @@ if __name__ == "__main__":
 	#Number candidate regions
 	print "Numbering regions"
 	numberedRegions, maxRegionNum = morph.label(denoiseIm2, 4, 0, return_num = True)
+	return numberedRegions
+
+if __name__ == "__main__":
+
+	fina = None
+	if len(sys.argv) >= 2:
+		fina = sys.argv[1]
+	if fina is None:
+		print "Specify input image on command line"
+		exit(0)
+
+	im = misc.imread(fina)
+
+	numberedRegions = ProcessImage(im)
 
 	if not os.path.exists("candidates"):
 		os.mkdir("candidates")
 
 	scores1 = ScoreUsingAspect(numberedRegions, "firstcritera.png")
-	scores1.sort()
-	scores1.reverse()
 	print "Using first criteria", scores1[0]
 
 	for i, can in enumerate(scores1):
@@ -168,9 +177,7 @@ if __name__ == "__main__":
 		outRecord[2] = scaledBBox
 		pickle.dump(outRecord, open("candidates/1-{0}.dat".format(i), "wb"), protocol=-1)
 
-	scores2 = ScoreUsingSize(numberedRegions, binIm.shape, "secondcriteria.png")
-	scores2.sort()
-	scores2.reverse()
+	scores2 = ScoreUsingSize(numberedRegions, "secondcriteria.png")
 	print "Using second criteria", scores2[0]
 
 	for i, can in enumerate(scores2):
