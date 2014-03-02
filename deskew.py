@@ -84,7 +84,7 @@ def Deskew(im, bbox, saveTempImages = False):
 	while bestAngle < -math.pi /4.:
 		bestAngle += math.pi /2.
 
-	return bbox, bestInd, bestAngle
+	return bboxMod, bestInd, bestAngle
 
 def RotateAndCrop(im, bbox, angle):
 
@@ -144,12 +144,12 @@ if __name__=="__main__":
 	bbox = roi[2]
 	print "bbox", bbox
 
-	bbox, bestInd, bestAngle = Deskew(im, bbox, True)
+	expandedBbox, bestInd, bestAngle = Deskew(im, bbox, True)
 
 	print bestInd, bestAngle, math.degrees(bestAngle)
-	pickle.dump((bbox, bestAngle), open(finaOut, "wb"), protocol=-1)
+	pickle.dump((expandedBbox, bestAngle), open(finaOut, "wb"), protocol=-1)
 
-	rotIm = RotateAndCrop(im, bbox, bestAngle)
+	rotIm = RotateAndCrop(im, expandedBbox, bestAngle)
 
 	misc.imsave("rotIm.png", rotIm)
 

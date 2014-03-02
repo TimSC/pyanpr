@@ -44,10 +44,10 @@ def CompareExampleToTraining(bwImg, preProcessedModel, getCandidates = False):
 			charScores.append((score, ch, example, sourceObjId))
 
 	charScores.sort(reverse=True)
-	for score, ch, example, sourceObjId in charScores[:5]:
-		annot = GetAnnotForObjId(plates, sourceObjId)
+	#for score, ch, example, sourceObjId in charScores[:5]:
+	#	#annot = GetAnnotForObjId(plates, sourceObjId)
 
-		print ch, score, sourceObjId, annot['reg']
+	#	print ch, score, sourceObjId#, annot['reg']
 
 	mergeImg = None
 	if getCandidates:
@@ -99,7 +99,7 @@ def PreprocessTraining(model):
 		preProcessedModel[char] = procChar
 	return preProcessedModel
 
-def ProcessPatch(rotIm, bbx):
+def ProcessPatch(rotIm, bbx, cCofG, preProcessedModel):
 
 	originalHeight = bbx[3] - bbx[2]
 	scaling = 50. / originalHeight
@@ -161,7 +161,7 @@ if __name__=="__main__":
 				expectedChar = plateStrStrip[i]
 
 			print reg, expectedChar, cCofG, bbx
-			charScores, candidateImgs = ProcessPatch(rotIm, bbx)
+			charScores, candidateImgs = ProcessPatch(rotIm, bbx, cCofG, preProcessedModel)
 
 			expectedCharFiltered = expectedChar
 			bestCharFiltered = charScores[0][1]

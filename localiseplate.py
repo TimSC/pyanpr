@@ -144,7 +144,7 @@ def ProcessImage(im):
 	#Number candidate regions
 	print "Numbering regions"
 	numberedRegions, maxRegionNum = morph.label(denoiseIm2, 4, 0, return_num = True)
-	return numberedRegions
+	return numberedRegions, scaling
 
 if __name__ == "__main__":
 
@@ -157,7 +157,7 @@ if __name__ == "__main__":
 
 	im = misc.imread(fina)
 
-	numberedRegions = ProcessImage(im)
+	numberedRegions, scaling = ProcessImage(im)
 
 	if not os.path.exists("candidates"):
 		os.mkdir("candidates")
