@@ -33,7 +33,7 @@ Run trainchars.py to collect examples of each character. Only half the data is u
 
 The main script to recognise plates is anpr.py. Run this without arguments and it begins processing the unseen test data. It is likely the image files are stored in a different location than the program expects, so pass the folder location to anpr.py and it will process unseen test images. The anpr.py script requires a recognition model (files charbboxes.dat, charcofgs.dat, charbboxangle.dat, charstrings.dat) but a sample model is included in this repository.
 
- python anpr.py anpr-plates/
+ python anpr.py /path/to/anpr-plates/
 
 Alternatively, specify a single image to process as the first argument:
 
