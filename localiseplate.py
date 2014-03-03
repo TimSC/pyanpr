@@ -108,7 +108,7 @@ def ProcessImage(im):
 		if im.shape[1] != targetDim:
 			scaling = float(targetDim) / im.shape[1]
 			im = misc.imresize(im, (int(round(im.shape[0] * scaling)), targetDim))
-	print "scaling", scaling
+	#print "scaling", scaling
 
 	greyim = 0.2126 * im[:,:,0] + 0.7152 * im[:,:,1] + 0.0722 * im[:,:,2]
 
@@ -128,7 +128,7 @@ def ProcessImage(im):
 	stdVal = vals.std()
 	threshold = meanVal + stdVal
 
-	print "Threshold", threshold
+	#print "Threshold", threshold
 
 	binIm = diff > threshold
 	misc.imsave("threshold.png", binIm)
@@ -142,7 +142,7 @@ def ProcessImage(im):
 	denoiseIm2 = morph.binary_closing(denoiseIm, np.ones((3, 13)))
 
 	#Number candidate regions
-	print "Numbering regions"
+	#print "Numbering regions"
 	numberedRegions, maxRegionNum = morph.label(denoiseIm2, 4, 0, return_num = True)
 	return numberedRegions, scaling
 

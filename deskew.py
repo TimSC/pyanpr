@@ -8,15 +8,15 @@ import numpy as np
 import scipy.ndimage
 
 def ExpandBBox(bbox, factor):
-	print "bbox", bbox
+	#print "bbox", bbox
 	#Expand bbox
 	mid = [sum(comp)/len(comp) for comp in bbox]
-	print "mid", mid
+	#print "mid", mid
 	xd = (mid[0] - bbox[0][0]) * factor
 	yd = (mid[1] - bbox[1][0]) * factor
 	bboxMod = [[bbox[0][0]-xd, bbox[0][1]+xd], [bbox[1][0]-yd, bbox[1][1]+yd]]
 	bboxMod = [map(int, map(round, pt)) for pt in bboxMod]
-	print "bbox expanded", bboxMod
+	#print "bbox expanded", bboxMod
 	return bboxMod
 
 def CropToBBox(im, bbox):
@@ -38,9 +38,9 @@ def Deskew(im, bbox, saveTempImages = False):
 	im = CropToBBox(im, bboxMod)
 
 	#Crop image to get ROI
-	print "im original shape", im.shape
+	#print "im original shape", im.shape
 
-	print "im shape", im.shape
+	#print "im shape", im.shape
 
 	#Convert to grey
 	if saveTempImages:
