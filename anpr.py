@@ -86,7 +86,7 @@ def Anpr(im, preProcessedModel):
 
 	return bestGuess, bestGuessConf
 
-def TestOnUnseenSamples(preProcessedModel):
+def TestOnUnseenSamples(preProcessedModel, imgPath = None):
 
 	#Run on unseen test examples
 	plates = readannotation.ReadPlateAnnotation("plates.annotation")
@@ -110,6 +110,11 @@ def TestOnUnseenSamples(preProcessedModel):
 			if os.path.isfile(fina):
 				im = misc.imread(fina)
 
+			if im is None and imgPath is not None:
+				altFina = imgPath+"/"+finaSplit[1]
+				if os.path.isfile(altFina):
+					im = misc.imread(altFina)
+					
 			if im is None:
 				print "Image file not found:", fina
 				continue
@@ -125,12 +130,15 @@ if __name__=="__main__":
 
 	preProcessedModel = recognisechars.PreprocessTraining(model)
 	print "Preprocessing done"
+	imgPath = None
+	if len(sys.argv) >= 2 and os.path.isdir(sys.argv[1]):
+		imgPath = sys.argv[1]
 
-	if len(sys.argv) < 2:
-		TestOnUnseenSamples(preProcessedModel)
+	if len(sys.argv) < 2 or imgPath is not None:
+		TestOnUnseenSamples(preProcessedModel, imgPath)
 	else:
 		#Test on specified example
-		im = misc.imread(sys.arv[1])
+		im = misc.imread(sys.argv[1])
 
 		guess = Anpr(im, preProcessedModel)
 		print "Final plate", guess
