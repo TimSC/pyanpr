@@ -2,6 +2,7 @@
 import recognisechars, readannotation, localiseplate
 import deskew, deskewMarkedPlates, detectblobs
 import scipy.misc as misc
+import sys, os
 
 def AnprLocalised(im, bbox, preProcessedModel):
 	#Deskew
@@ -21,49 +22,76 @@ def AnprLocalised(im, bbox, preProcessedModel):
 	#Recognise individual characters
 	details = []
 	bestGuess = ""
+	bestGuessConfidence = []
 	for bbx, cofg in zip(charBboxes, charCofGs):
 		charScores, candidateImgs = recognisechars.ProcessPatch(deskewedIm, bbx, cofg, preProcessedModel)
 		#for ch in charScores[:5]:
 		#	print ch[0], ch[1]
 		details.append(charScores)
-		bestGuess += charScores[0][1]
-	return bestGuess, details
+		bestChar = charScores[0][1]
+		bestGuess += bestChar
+		
+		#Look at the ranked results and see the proportion that
+		#are in agreement in the top 10
+		countAgree = 0
+		countTested = 0
+		for sc, ch, im, srcId in charScores[1:11]:
+			if bestChar == ch:
+				countAgree += 1
+			countTested += 1
+
+		bestGuessConfidence.append(float(countAgree) / countTested)
+	return bestGuess, bestGuessConfidence, details
 
 def Anpr(im, preProcessedModel):
 	#Localise
 	numberedRegions, scaling = localiseplate.ProcessImage(im)
 
 	scores1 = localiseplate.ScoreUsingAspect(numberedRegions, "firstcritera.png")
-	print "Using aspect criteria", scores1[0]
+	#print "Using aspect criteria", scores1[0]
+	bestGuess = None
+	bestGuessConf = []
 
 	for canNum, candidate in enumerate(scores1[:10]):
-		print canNum
+		#print canNum
 		plateBbox = candidate[2]
 		scaledBBox = [(c[0] / scaling, c[1] / scaling) for c in plateBbox]
-		bestGuess, details = AnprLocalised(im, scaledBBox, preProcessedModel)
-		print bestGuess
+		anprRet = AnprLocalised(im, scaledBBox, preProcessedModel)
+		if anprRet is None:
+			continue
+		guess, guessConfidence, details = anprRet	
+
+		print canNum, guess, guessConfidence
+
+		if sum(guessConfidence) > sum(bestGuessConf):
+			bestGuess = guess
+			bestGuessConf = guessConfidence
 
 	scores2 = localiseplate.ScoreUsingSize(numberedRegions, "secondcriteria.png")
-	print "Using size criteria", scores2[0]
+	#print "Using size criteria", scores2[0]
 
 	for canNum, candidate in enumerate(scores2[:10]):
-		print canNum
+		#print canNum
 		plateBbox = candidate[2]
 		scaledBBox = [(c[0] / scaling, c[1] / scaling) for c in plateBbox]
-		bestGuess, details = AnprLocalised(im, scaledBBox, preProcessedModel)
-		print bestGuess
+		anprRet = AnprLocalised(im, scaledBBox, preProcessedModel)
+		if anprRet is None:
+			continue
+		guess, guessConfidence, details = anprRet
+		print canNum, guess, guessConfidence
 
-if __name__=="__main__":
+		if sum(guessConfidence) > sum(bestGuessConf):
+			bestGuess = guess
+			bestGuessConf = guessConfidence
+
+	return bestGuess, bestGuessConf
+
+def TestOnUnseenSamples(preProcessedModel):
+
+	#Run on unseen test examples
 	plates = readannotation.ReadPlateAnnotation("plates.annotation")
 	count = 0
 	print "Num photos", len(plates)
-
-	print "Loading and Preprocessing training data"
-	plateCharBboxes, plateCharCofGs, plateCharBboxAndAngle, \
-		plateString, trainObjIds, testObjIds, model = recognisechars.LoadModel()
-
-	preProcessedModel = recognisechars.PreprocessTraining(model)
-	print "Preprocessing done"
 
 	#Iterate over test plates
 	hit, miss = 0, 0
@@ -75,8 +103,37 @@ if __name__=="__main__":
 			if foundObjId == objId:
 				break
 
-			im = misc.imread(fina)
+			print fina, reg
+			finaSplit = os.path.split(fina)
+
+			im = None
+			if os.path.isfile(fina):
+				im = misc.imread(fina)
+
+			if im is None:
+				print "Image file not found:", fina
+				continue
+	
+			guess = Anpr(im, preProcessedModel)
+			print "Final plate", guess
+
+if __name__=="__main__":
+
+	print "Loading and Preprocessing training data"
+	plateCharBboxes, plateCharCofGs, plateCharBboxAndAngle, \
+		plateString, trainObjIds, testObjIds, model = recognisechars.LoadModel()
+
+	preProcessedModel = recognisechars.PreprocessTraining(model)
+	print "Preprocessing done"
+
+	if len(sys.argv) < 2:
+		TestOnUnseenSamples(preProcessedModel)
+	else:
+		#Test on specified example
+		im = misc.imread(sys.arv[1])
+
+		guess = Anpr(im, preProcessedModel)
+		print "Final plate", guess
 		
-			Anpr(im, preProcessedModel)
 
 

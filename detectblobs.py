@@ -9,7 +9,7 @@ def DeleteBlob(regionNum, blobIm):
 	blobLocation = np.where(blobIm == regionNum)
 	blobIm[blobLocation] = -1
 
-def FindBlobs(scoreIm, numThresholds = 100, minLetterArea = 0.002, maxLetterArea = 0.05, bboxMinArea = 0.004, bboxMaxArea = 0.1, 
+def FindBlobs(scoreIm, numThresholds = 20, minLetterArea = 0.002, maxLetterArea = 0.05, bboxMinArea = 0.004, bboxMaxArea = 0.1, 
 	minAspect = 1.0):
 
 	normIm = exposure.rescale_intensity(scoreIm)
@@ -229,7 +229,6 @@ def FitBboxModel(inlierBboxNum, bboxLi, imShape, numberedRegions, tolerance = 0.
 		if cofg[0] < robustTopY or cofg[0] > robustBottomY:
 			continue #Outside lettering area
 
-		#print "a", blobNum
 		#Check if this collides with existing width ranges
 		containedWithin = []
 		partialOverlapWith = []
@@ -240,14 +239,12 @@ def FitBboxModel(inlierBboxNum, bboxLi, imShape, numberedRegions, tolerance = 0.
 			if result == 2:
 				containedWithin.append(i)
 
-		#print "b", blobNum, partialOverlapWith, containedWithin
 		#if len(partialOverlapWith) > 0: continue
 		if len(containedWithin) > 0: continue
-		#print "c", blobNum
 
-		blobWidths.append((bbox[2], bbox, cofg))
+		blobWidths.append((float(bbox[2]), bbox, cofg))
 
-	blobWidths.sort()
+	blobWidths.sort(key=lambda x: x[0]) #Prevent sorting except on first key
 
 	outBbox = []
 	outCofG = []

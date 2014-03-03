@@ -54,7 +54,10 @@ def Deskew(im, bbox, saveTempImages = False):
 	if saveTempImages:
 		misc.imsave("test3.png", edgeIm)
 
-	midThresh = 0.5 * (edgeIm.min() + edgeIm.max())
+	if edgeIm.size > 0:
+		midThresh = 0.5 * (edgeIm.min() + edgeIm.max())
+	else:
+		midThresh = 128
 	thresholdIm = (edgeIm > midThresh)
 	if saveTempImages:
 		misc.imsave("test4.png", thresholdIm)
