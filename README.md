@@ -1,16 +1,16 @@
-pyanpr-imagemine
-================
+anpr
+====
 
 Tests of automatic number plate recognition in python.
 
 ==Required Python Libraries==
 
 Required:
-Python 2.7 or similar.
-Numpy (http://www.numpy.org/)
-Scipy (http://scipy.org/)
-skimage (http://scikit-image.org/)
-Python Imaging Library (http://www.pythonware.com/products/pil/)
+* Python 2.7 or similar.
+* Numpy (http://www.numpy.org/)
+* Scipy (http://scipy.org/)
+* skimage (http://scikit-image.org/)
+* Python Imaging Library (http://www.pythonware.com/products/pil/)
 
 ==Training==
 
@@ -22,21 +22,21 @@ Run deskewMarkedPlates.py to horizontally align the number plate images. This sa
 
 managetrainingchars.py is an interactive, command line tool to split the plates into separate characters and verify the character bounding boxes match the true registration. Saving data from this tool generates the files:
 
-charbboxes.dat
-charcofgs.dat
-charbboxangle.dat
-charstrings.dat
+* charbboxes.dat
+* charcofgs.dat
+* charbboxangle.dat
+* charstrings.dat
 
-Run trainchars.py to collect examples of each character. Only half the data is used in training and the remainer is reserved for testing. This produces the file: charmodel.dat
+Run trainchars.py to collect examples of each character. Only half the data is used in training and the remainer is reserved for testing. This produces the file "charmodel.dat".
 
 ==ANPR Recognition==
 
-The main script to recognise plates is anpr.py. Run this without arguments and it begins processing the unseen test data. It is likely the image files are stored in a different location than the program expects, so pass the folder location to anpr.py and it will process unseen test images.
+The main script to recognise plates is anpr.py. Run this without arguments and it begins processing the unseen test data. It is likely the image files are stored in a different location than the program expects, so pass the folder location to anpr.py and it will process unseen test images. The anpr.py script requires a recognition model (files charbboxes.dat, charcofgs.dat, charbboxangle.dat, charstrings.dat) but a sample model is included in this repository.
 
-python anpr.py anpr-plates/
+ python anpr.py anpr-plates/
 
 Alternatively, specify a single image to process as the first argument:
 
-python anpr.py /path/to/file/IMG_20140219_105154.jpeg
+ python anpr.py /path/to/file/IMG_20140219_105154.jpeg
 
 
