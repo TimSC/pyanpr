@@ -1,33 +1,9 @@
-import readannotation, os, pickle, random, cStringIO, managetrainingchars, sys
+import readannotation, os, pickle, random, cStringIO, managetrainingchars, sys, localiseplate
 import scipy.misc as misc
 import deskew, deskewMarkedPlates, detectblobs
 import numpy as np
 import skimage.exposure as exposure
 from PIL import Image
-
-def ExtractPatch(image, bbox):
-	bbox = map(int,map(round,bbox))
-	#print image.shape, bbox
-	out = np.zeros((bbox[3]-bbox[2], bbox[1]-bbox[0], 3), dtype=image.dtype)
-
-	origin = [0, 0]
-	if bbox[0] < 0:
-		origin[0] = -bbox[0]
-		bbox[0] = 0
-	if bbox[2] < 0:
-		origin[1] = -bbox[2]
-		bbox[2] = 0
-	if bbox[1] >= image.shape[1]:
-		bbox[1] = image.shape[1]-1
-	if bbox[3] >= image.shape[0]:
-		bbox[3] = image.shape[0]-1
-	
-	h = bbox[3]-bbox[2]
-	w = bbox[1]-bbox[0]
-
-	#print bbox
-	out[origin[1]:origin[1]+h, origin[0]:origin[0]+w, :] = image[bbox[2]:bbox[2]+h, bbox[0]:bbox[0]+w, :]
-	return out
 
 if __name__=="__main__":
 	imgPath = None
@@ -102,7 +78,7 @@ if __name__=="__main__":
 			targetMargin = 40
 			margin = targetMargin / scaling
 
-			patch = ExtractPatch(rotIm, (cCofG[1]-margin, cCofG[1]+margin, cCofG[0]-margin, cCofG[0]+margin))
+			patch = localiseplate.ExtractPatch(rotIm, (cCofG[1]-margin, cCofG[1]+margin, cCofG[0]-margin, cCofG[0]+margin))
 			
 			#Scale height
 			#patchWidth = int(round(patch.shape[0]*scaling))

@@ -11,7 +11,31 @@ import skimage.morphology as morph
 import matplotlib.pyplot as plt
 import math, sys, pickle, os
 
-def ScoreUsingAspect(numberedRegions, vis = None):
+def ExtractPatch(image, bbox):
+	bbox = map(int,map(round,bbox))
+	#print image.shape, bbox
+	out = np.zeros((bbox[3]-bbox[2], bbox[1]-bbox[0], 3), dtype=image.dtype)
+
+	origin = [0, 0]
+	if bbox[0] < 0:
+		origin[0] = -bbox[0]
+		bbox[0] = 0
+	if bbox[2] < 0:
+		origin[1] = -bbox[2]
+		bbox[2] = 0
+	if bbox[1] >= image.shape[1]:
+		bbox[1] = image.shape[1]-1
+	if bbox[3] >= image.shape[0]:
+		bbox[3] = image.shape[0]-1
+	
+	h = bbox[3]-bbox[2]
+	w = bbox[1]-bbox[0]
+
+	#print bbox
+	out[origin[1]:origin[1]+h, origin[0]:origin[0]+w, :] = image[bbox[2]:bbox[2]+h, bbox[0]:bbox[0]+w, :]
+	return out
+
+def ScoreUsingAspect(numberedRegions, targetAspect = 4.0, vis = None):
 	#Use first criterion (region aspect ratio) to select candidates
 	maxRegionNum = numberedRegions.max()
 
@@ -29,7 +53,6 @@ def ScoreUsingAspect(numberedRegions, vis = None):
 			aspect = 0.
 		area = xr * yr
 
-		targetAspect = 6.8
 		aspectErr = abs(targetAspect - aspect)
 		if aspectErr > 1e-6:
 			score = 1. / aspectErr
@@ -53,7 +76,7 @@ def ScoreUsingAspect(numberedRegions, vis = None):
 
 	return regionScores
 
-def ScoreUsingSize(numberedRegions, vis = None):
+def ScoreUsingSize(numberedRegions, xwtarget = 0.14, ywtarget = 0.03, vis = None):
 	#Use second criteria (of x and y range of region) to select candidates
 	maxRegionNum = numberedRegions.max()
 
@@ -67,8 +90,6 @@ def ScoreUsingSize(numberedRegions, vis = None):
 		xr = pixPos[1].max() - pixPos[1].min()
 		area = xr * yr
 
-		xwtarget = 0.34
-		ywtarget = 0.07
 		xw = float(xr)/numberedRegions.shape[1]
 		yw = float(yr)/numberedRegions.shape[0]
 		xerr = abs(xw - xwtarget)
@@ -78,7 +99,7 @@ def ScoreUsingSize(numberedRegions, vis = None):
 		if yerr < 0.001:
 			yerr = 0.001
 		score = (1. / xerr) * (1. / yerr)
-		#print regionNum, xw, yw, score
+		print regionNum, xw, yw, score
 		regionScores2.append([score, regionNum, bbox])
 
 	if vis is not None:
@@ -95,10 +116,9 @@ def ScoreUsingSize(numberedRegions, vis = None):
 
 	return regionScores2
 
-def ProcessImage(im):
+def ProcessImage(im, targetDim = 250, doDenoiseOpening = True):
 
-	#Resize to 800 pixels max edge size
-	targetDim = 800
+	#Resize to specified pixels max edge size
 	scaling = 1.
 	if im.shape[0] > im.shape[1]:
 		if im.shape[0] != targetDim:
@@ -138,8 +158,16 @@ def ProcessImage(im):
 
 	#Denoise
 	diamond = morph.diamond(2)
-	denoiseIm = morph.binary_opening(binIm, diamond)
-	denoiseIm2 = morph.binary_closing(denoiseIm, np.ones((3, 13)))
+	if doDenoiseOpening:
+		currentIm = morph.binary_opening(binIm, diamond)
+	else:
+		currentIm = binIm
+	denoiseIm2 = morph.binary_closing(currentIm, np.ones((3, 13)))
+
+	#print "currentIm", currentIm.min(), currentIm.max(), currentIm.mean()
+	#print "denoiseIm2", denoiseIm2.min(), denoiseIm2.max(), currentIm.mean()
+	#misc.imsave("denoised1.png", currentIm * 255)
+	#misc.imsave("denoised2.png", denoiseIm2 * 255)
 
 	#Number candidate regions
 	#print "Numbering regions"
@@ -157,19 +185,19 @@ if __name__ == "__main__":
 
 	im = misc.imread(fina)
 
-	numberedRegions, scaling = ProcessImage(im)
+	numberedRegions, scaling = ProcessImage(im, 250, False)
 
 	if not os.path.exists("candidates"):
 		os.mkdir("candidates")
 
-	scores1 = ScoreUsingAspect(numberedRegions, "firstcritera.png")
+	scores1 = ScoreUsingAspect(numberedRegions, vis="firstcritera.png")
 	print "Using first criteria", scores1[0]
 
 	for i, can in enumerate(scores1):
 		bbox = can[2]
-		patchIm = im[bbox[1][0]:bbox[1][1],:]
-		patchIm = patchIm[:,bbox[0][0]:bbox[0][1]]
-		print bbox
+		patchIm = ExtractPatch(im, [bbox[0][0], bbox[0][1]+1, bbox[1][0], bbox[1][1]+1])
+		#patchIm = im[bbox[1][0]:bbox[1][1],:]
+		#patchIm = patchIm[:,bbox[0][0]:bbox[0][1]]
 		scaledBBox = [(c[0] / scaling, c[1] / scaling) for c in bbox]
 		misc.imsave("candidates/1-{0}.png".format(i), patchIm)
 
@@ -177,13 +205,12 @@ if __name__ == "__main__":
 		outRecord[2] = scaledBBox
 		pickle.dump(outRecord, open("candidates/1-{0}.dat".format(i), "wb"), protocol=-1)
 
-	scores2 = ScoreUsingSize(numberedRegions, "secondcriteria.png")
+	scores2 = ScoreUsingSize(numberedRegions, vis="secondcriteria.png")
 	print "Using second criteria", scores2[0]
 
 	for i, can in enumerate(scores2):
 		bbox = can[2]
-		patchIm = im[bbox[1][0]:bbox[1][1],:]
-		patchIm = patchIm[:,bbox[0][0]:bbox[0][1]]
+		patchIm = ExtractPatch(im, [bbox[0][0], bbox[0][1]+1, bbox[1][0], bbox[1][1]+1])
 		scaledBBox = [(c[0] / scaling, c[1] / scaling) for c in bbox]
 		misc.imsave("candidates/1-{0}.png".format(i), patchIm)
 
