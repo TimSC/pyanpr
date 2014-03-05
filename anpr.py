@@ -5,6 +5,10 @@ import scipy.misc as misc
 import sys, os
 
 def AnprLocalised(im, bbox, preProcessedModel):
+
+	if len(preProcessedModel)==0:
+		print "Warning: recognition model is empty"
+
 	#Deskew
 	expandedBbox, bestInd, bestAngle = deskew.Deskew(im, bbox)
 	#print "expandedBbox", expandedBbox
