@@ -104,20 +104,13 @@ def TestOnUnseenSamples(preProcessedModel, imgPath = None):
 				break
 
 			print fina, reg
-			finaSplit = os.path.split(fina)
-
-			im = None
-			if os.path.isfile(fina):
-				im = misc.imread(fina)
-
-			if im is None and imgPath is not None:
-				altFina = imgPath+"/"+finaSplit[1]
-				if os.path.isfile(altFina):
-					im = misc.imread(altFina)
+			actualFina = readannotation.GetActualImageFileName(fina, [imgPath])
 					
-			if im is None:
+			if actualFina is None:
 				print "Image file not found:", fina
 				continue
+
+			im = misc.imread(actualFina)
 	
 			guess = Anpr(im, preProcessedModel)
 			print "Final plate", guess

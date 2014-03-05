@@ -1,3 +1,4 @@
+import os
 
 def ReadPlateAnnotation(fina):
 	fi = open(fina, "rt")
@@ -40,6 +41,24 @@ def ReadPlateAnnotation(fina):
 		subrec[key] = val
 
 	return records
+
+def GetActualImageFileName(baseName, possibleLocations):
+	im = None
+	finaSplit = os.path.split(baseName)
+	actualName = None
+
+	for imgPath in possibleLocations:
+		if imgPath is None: continue
+		altFina = imgPath+"/"+finaSplit[1]
+		if os.path.isfile(altFina):
+			actualName = altFina
+		if actualName is not None:
+			break
+
+	if os.path.isfile(baseName) and actualName is None:
+		actualName = baseName
+
+	return actualName
 
 if __name__=="__main__":
 	plates = ReadPlateAnnotation("plates.annotation")

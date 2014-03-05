@@ -1,4 +1,4 @@
-import readannotation, os, pickle, random, cStringIO, managetrainingchars
+import readannotation, os, pickle, random, cStringIO, managetrainingchars, sys
 import scipy.misc as misc
 import deskew, deskewMarkedPlates, detectblobs
 import numpy as np
@@ -30,6 +30,10 @@ def ExtractPatch(image, bbox):
 	return out
 
 if __name__=="__main__":
+	imgPath = None
+	if len(sys.argv) >= 2 and os.path.isdir(sys.argv[1]):
+		imgPath = sys.argv[1]
+
 	plates = readannotation.ReadPlateAnnotation("plates.annotation")
 	count = 0
 	print "Num photos", len(plates)
@@ -67,6 +71,12 @@ if __name__=="__main__":
 
 		if objId not in plateString: continue #Plate not checked
 
+		actualFina = readannotation.GetActualImageFileName(fina, [imgPath])
+
+		if actualFina is None:
+			print "Image file not found:", fina
+			continue
+
 		bboxes = plateCharBboxes[objId]
 		plateStr = plateString[objId]
 		charCofG = plateCharCofGs[objId]
@@ -80,8 +90,8 @@ if __name__=="__main__":
 		if plateStrStrip is not None and len(plateStrStrip) != len(bboxes):
 			print "Bbox number mismatch"
 
-		#ViewPlate(fina, bbox, angle, bboxes, charCofG)
-		im = misc.imread(fina)
+		#ViewPlate(actualFina, bbox, angle, bboxes, charCofG)
+		im = misc.imread(actualFina)
 		rotIm = deskew.RotateAndCrop(im, bbox, angle)
 		
 		for char, bbx, cCofG in zip(plateStrStrip, bboxes, charCofG):

@@ -14,9 +14,9 @@ Required:
 
 ==Training==
 
-NOTE: The images may need to be in a specific folder. More work is needed on the code to enable this to be specified on the command line. The git repo contains a complete model, so training is optional.
-
 The original number plates were annotated using imgAnnotation (https://github.com/alexklaeser/imgAnnotation) and saved in the plates.annotation file.
+
+NOTE: The images may need to be in a specific folder (defined in the annotation data file) or specified as the first argument for each of these scripts.
 
 Run deskewMarkedPlates.py to horizontally align the number plate images. This saves alignment data into the "train" sub folder.
 

@@ -1,5 +1,5 @@
 
-import readannotation, os, pickle
+import readannotation, os, pickle, sys
 import scipy.misc as misc
 import deskew, deskewMarkedPlates, detectblobs
 import numpy as np
@@ -87,7 +87,7 @@ def ViewPlate(fina, bbox, angle, charBboxes, charCofG):
 	#plt.savefig(finaImSplitExt[0]+".png")
 	plt.show()
 
-def EditPhoto(indexVal, plates):
+def EditPhoto(indexVal, plates, imgPath):
 	photo = plates[indexVal]
 	fina = photo[0]['file']
 	objId = photo[1]['object']
@@ -103,7 +103,13 @@ def EditPhoto(indexVal, plates):
 	if objId in plateString:
 		print "Plate string:", plateString[objId]
 
-	ViewPlate(fina, bbox, angle, charBboxes, charCofG)
+	actualFina = readannotation.GetActualImageFileName(fina, [imgPath])
+
+	if actualFina is None:
+		print "Image file not found:", fina
+		return
+
+	ViewPlate(actualFina, bbox, angle, charBboxes, charCofG)
 
 	print "1) Plate is correct ({0})".format(reg)
 	print "2) Custom string"
@@ -143,6 +149,10 @@ if __name__=="__main__":
 	plateCharBboxAndAngle = {}
 	plateString = {}
 
+	imgPath = None
+	if len(sys.argv) >= 2 and os.path.isdir(sys.argv[1]):
+		imgPath = sys.argv[1]
+
 	while 1:
 		print "1. Split characters"
 		print "2. View photo"
@@ -174,12 +184,18 @@ if __name__=="__main__":
 					fina = photo[0]['file']
 					objId = photo[1]['object']
 
-					bbox, angle	= GetDeskewForImageFilename(fina)
+					actualFina = readannotation.GetActualImageFileName(fina, [imgPath])
+
+					if actualFina is None:
+						print "Image file not found:", fina
+						continue
+
+					bbox, angle	= GetDeskewForImageFilename(actualFina)
 					if bbox is None:
 						print "Cannot find deskew file for", fina
 						continue
 
-					charBboxes, charCofG = SplitCharacters(fina, bbox, angle)
+					charBboxes, charCofG = SplitCharacters(actualFina, bbox, angle)
 					plateCharBboxes[objId] = charBboxes
 					plateCharCofGs[objId] = charCofG
 					plateCharBboxAndAngle[objId] = (bbox, angle)
@@ -187,7 +203,7 @@ if __name__=="__main__":
 		if userInput == "2":
 			index = raw_input("view photo ({0} to {1}):".format(0, len(plates)-1))
 			indexVal = StrToInt(index, 0, len(plates)-1)
-			EditPhoto(indexVal, plates)			
+			EditPhoto(indexVal, plates, imgPath)			
 
 		if userInput == "3":
 			objIds = plateString.keys()
