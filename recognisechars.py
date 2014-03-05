@@ -83,6 +83,9 @@ def LoadModel():
 
 def PreprocessTraining(model):
 
+	if len(model)==0:
+		raise RuntimeError("Recognition model is empty")
+
 	#Preprocess training data
 	preProcessedModel = {}
 
