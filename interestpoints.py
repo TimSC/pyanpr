@@ -65,7 +65,7 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 
 	labels = []
 	samples = []
-	photoId = []
+	plateIds = []
 
 	for photoNum, photo in enumerate(plates):
 		fina = photo[0]['file']
@@ -73,10 +73,10 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 
 		labelsNonZero = []
 		samplesNonZero = []
-		photoIdNonZero = []
+		plateIdNonZero = []
 		labelsZero = []
 		samplesZero = []
-		photoIdZero = []
+		plateIdZero = []
 
 		actualFina = readannotation.GetActualImageFileName(fina, [imgPath])	
 		im = misc.imread(actualFina)
@@ -84,6 +84,7 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 		hsvImg = color.rgb2hsv(normIm)
 
 		for record in photo[1:]:
+			plateId = record['object']
 			plateBbox = record['bbox']
 			plateBbox = [plateBbox[0], plateBbox[0] + plateBbox[2], plateBbox[1], plateBbox[1]+plateBbox[3]]
 
@@ -115,30 +116,30 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 					if overlap == 0.:
 						samplesZero.append(freq)
 						labelsZero.append(overlap)
-						photoIdZero.append(photoNum)
+						plateIdZero.append(plateId)
 					else:
 						samplesNonZero.append(freq)
 						labelsNonZero.append(overlap)
-						photoIdNonZero.append(photoNum)
+						plateIdNonZero.append(plateId)
 
 		#Limit number of zero labelled samples
 		filtIndex = random.sample(range(len(labelsZero)), maxZeroSamples)
 		labelsZeroFilt = [labelsZero[i] for i in filtIndex]
-		photoIdZeroFilt = [photoIdZero[i] for i in filtIndex]
+		plateIdZeroFilt = [plateIdZero[i] for i in filtIndex]
 		samplesZeroFilt = [samplesZero[i] for i in filtIndex]
 
 		print "Num zero samples", len(samplesZeroFilt), "reduced from", len(samplesZero)
 		print "Num non-zero samples", len(samplesNonZero)
 
 		labels.extend(labelsZeroFilt)
-		photoId.extend(photoIdZeroFilt)
+		plateIds.extend(plateIdZeroFilt)
 		samples.extend(samplesZeroFilt)
 
 		labels.extend(labelsNonZero)
-		photoId.extend(photoIdNonZero)
+		plateIds.extend(plateIdNonZero)
 		samples.extend(samplesNonZero)
 
-	return samples, labels, photoId
+	return samples, labels, plateIds
 
 def OverlapProportion(patchBbox, plateBbox):
 	ox = OverlapProportion1D(patchBbox[0], patchBbox[1], plateBbox[0], plateBbox[1])
@@ -157,7 +158,27 @@ if __name__ == "__main__":
 	if len(sys.argv) >= 2 and os.path.isdir(sys.argv[1]):
 		imgPath = sys.argv[1]
 
-	samples, labels, photoId = GenerateSamples(plates, imgPath)
-	pickle.dump((samples, labels, photoId), open("features.dat", "wb"), protocol=-1)
+	print "Extract features"
+	if 1:
+		samples, labels, plateIds = GenerateSamples(plates, imgPath)
+		samples = np.array(samples)
+		pickle.dump((samples, labels, plateIds), open("features.dat", "wb"), protocol=-1)
+	else:
+		samples, labels, plateIds = pickle.load(open("features.dat", "rb"))
+		print len(labels)
+
+	print "Whiten Features"
+	if 1:
+		samples = np.array(samples)
+		print samples.shape
+
+		var = samples.var(axis=0)
+		scaling = np.power(var, 0.5)
+		whitened = samples / scaling
+		whitenedVar = whitened.var(axis=0)
+
+
+		pickle.dump((whitened, labels, plateIds, scaling), open("features-whitened.dat", "wb"), protocol=-1)
+
 
 
