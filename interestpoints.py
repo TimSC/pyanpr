@@ -6,6 +6,12 @@ import numpy as np
 import skimage.exposure as exposure
 import skimage.color as color
 import sklearn.svm as svm
+import sklearn.ensemble as ensemble
+
+#HSV 10-bin histogram
+#Average error 0.038
+#Correlation 0.60
+#Non-zero label error 0.44
 
 def test():
 	im1 = cv2.imread("/media/data/home/tim/kinatomic/datasets/anpr-plates/IMG_20140219_105833.jpg")
@@ -205,7 +211,8 @@ if __name__ == "__main__":
 	print trainingData.shape
 
 	print "Train regressor"
-	regressor = svm.SVR()
+	#regressor = svm.SVR()
+	regressor = ensemble.RandomForestRegressor(n_jobs=4)
 
 	regressor.fit(trainingData, trainingLabels)
 
@@ -218,7 +225,20 @@ if __name__ == "__main__":
 	predLabels = regressor.predict(testData)
 	print testData.shape
 
+	errors = []
+	for p, tr in zip(predLabels, testLabels):
+		errors.append(p - tr)
+	print "Average error", np.abs(errors).mean()
+	print "Correlation", np.corrcoef(testLabels, predLabels)[0,1]
+
+	nonZeroLabelErrors = []
+	for p, tr in zip(predLabels, testLabels):
+		if tr == 0.: continue
+		nonZeroLabelErrors.append(p - tr)
+	print "Non-zero label error", np.abs(nonZeroLabelErrors).mean()
+
 	import matplotlib.pyplot as plt
-	plt.plot(testLabels, predLabels)
+	plt.plot(testLabels, predLabels, '.')
 	plt.show()
+
 
