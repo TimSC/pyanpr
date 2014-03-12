@@ -5,6 +5,7 @@ import readannotation, sys, os, localiseplate
 import numpy as np
 import skimage.exposure as exposure
 import skimage.color as color
+import sklearn.svm as svm
 
 def test():
 	im1 = cv2.imread("/media/data/home/tim/kinatomic/datasets/anpr-plates/IMG_20140219_105833.jpg")
@@ -159,16 +160,17 @@ if __name__ == "__main__":
 		imgPath = sys.argv[1]
 
 	print "Extract features"
-	if 1:
+	if 0:
 		samples, labels, plateIds = GenerateSamples(plates, imgPath)
 		samples = np.array(samples)
 		pickle.dump((samples, labels, plateIds), open("features.dat", "wb"), protocol=-1)
-	else:
+	
+	if 0:
 		samples, labels, plateIds = pickle.load(open("features.dat", "rb"))
 		print len(labels)
 
 	print "Whiten Features"
-	if 1:
+	if 0:
 		samples = np.array(samples)
 		print samples.shape
 
@@ -179,6 +181,44 @@ if __name__ == "__main__":
 
 
 		pickle.dump((whitened, labels, plateIds, scaling), open("features-whitened.dat", "wb"), protocol=-1)
+	else:
+		whitened, labels, plateIds, scaling = pickle.load(open("features-whitened.dat", "rb"))
 
+	print "Extract training data"
+	plateIdsSet = set()
+	for pi in plateIds:
+		plateIdsSet.add(pi)
+	plateIdsSet = list(plateIdsSet)
 
+	trainIds = random.sample(plateIdsSet, len(plateIdsSet) / 2)
+	trainRows = [(pi in trainIds) for pi in plateIds]
+	testRows = [(pi not in trainIds) for pi in plateIds]
+
+	print len(trainRows), sum(trainRows)
+	print len(testRows), sum(testRows)
+	trainRows = np.array(trainRows, dtype=np.bool)
+	testRows = np.array(testRows, dtype=np.bool)
+
+	print "Extract training data"
+	trainingData = whitened[trainRows, :]
+	trainingLabels = np.array(labels)[trainRows]
+	print trainingData.shape
+
+	print "Train regressor"
+	regressor = svm.SVR()
+
+	regressor.fit(trainingData, trainingLabels)
+
+	pickle.dump(regressor, open("localise-model.dat", "wb"))
+
+	print "Extract test data"
+	
+	testData = whitened[testRows, :]
+	testLabels = np.array(labels)[testRows]
+	predLabels = regressor.predict(testData)
+	print testData.shape
+
+	import matplotlib.pyplot as plt
+	plt.plot(testLabels, predLabels)
+	plt.show()
 
