@@ -20,6 +20,11 @@ import matplotlib.pyplot as plt
 #Correlation 0.62
 #Non-zero label error 0.44
 
+#20 bin sobel
+#Average error 0.0504484715633
+#Correlation 0.398753870431
+#Non-zero label error 0.530846231923
+
 def test():
 	im1 = cv2.imread("/media/data/home/tim/kinatomic/datasets/anpr-plates/IMG_20140219_105833.jpg")
 
@@ -133,7 +138,7 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 					crop2 = localiseplate.ExtractPatchGrey(edgeIm, patchBbox)
 
 					#feat1 = ExtractHistogram(crop, [np.linspace(0., 1., 10), np.linspace(0., 1., 10), np.linspace(0., 1., 10)])
-					#feat2 = ExtractHistogramGrey(crop2, np.linspace(-1000., 1000., 20))
+					feat2 = ExtractHistogramGrey(crop2, np.linspace(-1000., 1000., 20))
 					#feats = np.concatenate((feat1, feat2))
 					feats = feat2
 
