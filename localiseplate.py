@@ -1,6 +1,6 @@
 
-#Improved number plate localisation algorithm and its efficient 
-#field programmable gate arrays implementation
+#Based on "Improved number plate localisation algorithm and its efficient 
+#field programmable gate arrays implementation"
 #Xiaojun Zhai, Faycal Bensaali, Soodamani Ramalingam
 #IET Circuits Devices Syst., 2013, Vol. 7, Iss. 2, pp. 93-103
 
@@ -99,7 +99,7 @@ def ScoreUsingSize(numberedRegions, xwtarget = 0.14, ywtarget = 0.03, vis = None
 		if yerr < 0.001:
 			yerr = 0.001
 		score = (1. / xerr) * (1. / yerr)
-		print regionNum, xw, yw, score
+		#print regionNum, xw, yw, score
 		regionScores2.append([score, regionNum, bbox])
 
 	if vis is not None:
@@ -116,7 +116,7 @@ def ScoreUsingSize(numberedRegions, xwtarget = 0.14, ywtarget = 0.03, vis = None
 
 	return regionScores2
 
-def ProcessImage(im, targetDim = 250, doDenoiseOpening = True):
+def ProcessImage(im, targetDim = 250, doDenoiseOpening = True, doDenoiseClosing = True, closingWidth = 13, closingHeight = 3):
 
 	#Resize to specified pixels max edge size
 	scaling = 1.
@@ -162,12 +162,15 @@ def ProcessImage(im, targetDim = 250, doDenoiseOpening = True):
 		currentIm = morph.binary_opening(binIm, diamond)
 	else:
 		currentIm = binIm
-	denoiseIm2 = morph.binary_closing(currentIm, np.ones((3, 13)))
+	if doDenoiseClosing:
+		denoiseIm2 = morph.binary_closing(currentIm, np.ones((closingHeight, closingWidth)))
+	else:
+		denoiseIm2 = currentIm
 
 	#print "currentIm", currentIm.min(), currentIm.max(), currentIm.mean()
 	#print "denoiseIm2", denoiseIm2.min(), denoiseIm2.max(), currentIm.mean()
-	#misc.imsave("denoised1.png", currentIm * 255)
-	#misc.imsave("denoised2.png", denoiseIm2 * 255)
+	misc.imsave("denoised1.png", currentIm * 255)
+	misc.imsave("denoised2.png", denoiseIm2 * 255)
 
 	#Number candidate regions
 	#print "Numbering regions"
@@ -185,7 +188,7 @@ if __name__ == "__main__":
 
 	im = misc.imread(fina)
 
-	numberedRegions, scaling = ProcessImage(im, 250, False)
+	numberedRegions, scaling = ProcessImage(im, 250, False, False, 5, 3)
 
 	if not os.path.exists("candidates"):
 		os.mkdir("candidates")
@@ -195,7 +198,7 @@ if __name__ == "__main__":
 
 	for i, can in enumerate(scores1):
 		bbox = can[2]
-		patchIm = ExtractPatch(im, [bbox[0][0], bbox[0][1]+1, bbox[1][0], bbox[1][1]+1])
+		patchIm = ExtractPatch(im, [bbox[0][0] / scaling, (bbox[0][1]+1) / scaling, bbox[1][0] / scaling, (bbox[1][1]+1)/scaling])
 		#patchIm = im[bbox[1][0]:bbox[1][1],:]
 		#patchIm = patchIm[:,bbox[0][0]:bbox[0][1]]
 		scaledBBox = [(c[0] / scaling, c[1] / scaling) for c in bbox]
@@ -210,11 +213,11 @@ if __name__ == "__main__":
 
 	for i, can in enumerate(scores2):
 		bbox = can[2]
-		patchIm = ExtractPatch(im, [bbox[0][0], bbox[0][1]+1, bbox[1][0], bbox[1][1]+1])
+		patchIm = ExtractPatch(im, [bbox[0][0] /scaling, (bbox[0][1]+1)/scaling, bbox[1][0]/scaling, (bbox[1][1]+1)/scaling])
 		scaledBBox = [(c[0] / scaling, c[1] / scaling) for c in bbox]
-		misc.imsave("candidates/1-{0}.png".format(i), patchIm)
+		misc.imsave("candidates/2-{0}.png".format(i), patchIm)
 
 		outRecord = can[:]
 		outRecord[2] = scaledBBox
-		pickle.dump(outRecord, open("candidates/1-{0}.dat".format(i), "wb"), protocol=-1)
+		pickle.dump(outRecord, open("candidates/2-{0}.dat".format(i), "wb"), protocol=-1)
 
