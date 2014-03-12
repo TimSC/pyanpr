@@ -7,10 +7,17 @@ import skimage.exposure as exposure
 import skimage.color as color
 import sklearn.svm as svm
 import sklearn.ensemble as ensemble
+import scipy.ndimage as ndimage
+import matplotlib.pyplot as plt
 
 #HSV 10-bin histogram
 #Average error 0.038
 #Correlation 0.60
+#Non-zero label error 0.44
+
+#HSV 10-bin histogram and 20 bin sobel
+#Average error 0.038
+#Correlation 0.62
 #Non-zero label error 0.44
 
 def test():
@@ -56,6 +63,16 @@ def ExtractHistogram(im, chanBins):
 		#print freq
 	return out
 
+def ExtractHistogramGrey(im, bins):
+	flatChanIm = im.reshape((im.size,))
+	#print flatChanIm.shape, bins
+	freq, bins2 = np.histogram(flatChanIm, bins, density=1)
+	return freq / len(bins2)
+
+def SobelHistogram():
+	pass
+
+
 def OverlapProportion1D(a1, a2, b1, b2):
 	if a2 <= b1: return 0.
 	if a1 >= b2: return 0.
@@ -90,6 +107,9 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 		normIm = exposure.rescale_intensity(im)
 		hsvImg = color.rgb2hsv(normIm)
 
+		greyim = 0.2126 * im[:,:,0] + 0.7152 * im[:,:,1] + 0.0722 * im[:,:,2]
+		edgeIm = ndimage.sobel(greyim, axis=0)
+
 		for record in photo[1:]:
 			plateId = record['object']
 			plateBbox = record['bbox']
@@ -98,7 +118,6 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 			wx = 50.
 			wy = 50.
 			
-
 			for cx in range(0, normIm.shape[1], 60):
 				for cy in range(0, normIm.shape[0], 60):
 					
@@ -111,8 +130,12 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 					patchBbox = (x1, x2, y1, y2)
 
 					crop = localiseplate.ExtractPatch(hsvImg, patchBbox)
+					crop2 = localiseplate.ExtractPatchGrey(edgeIm, patchBbox)
 
-					freq = ExtractHistogram(crop, [np.linspace(0., 1., 10), np.linspace(0., 1., 10), np.linspace(0., 1., 10)])
+					#feat1 = ExtractHistogram(crop, [np.linspace(0., 1., 10), np.linspace(0., 1., 10), np.linspace(0., 1., 10)])
+					#feat2 = ExtractHistogramGrey(crop2, np.linspace(-1000., 1000., 20))
+					#feats = np.concatenate((feat1, feat2))
+					feats = feat2
 
 					overlap = OverlapProportion(patchBbox, plateBbox)
 					#print cx, cy, overlap, freq
@@ -121,11 +144,11 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 					#	misc.imshow(crop)
 
 					if overlap == 0.:
-						samplesZero.append(freq)
+						samplesZero.append(feats)
 						labelsZero.append(overlap)
 						plateIdZero.append(plateId)
 					else:
-						samplesNonZero.append(freq)
+						samplesNonZero.append(feats)
 						labelsNonZero.append(overlap)
 						plateIdNonZero.append(plateId)
 
@@ -166,7 +189,7 @@ if __name__ == "__main__":
 		imgPath = sys.argv[1]
 
 	print "Extract features"
-	if 0:
+	if 1:
 		samples, labels, plateIds = GenerateSamples(plates, imgPath)
 		samples = np.array(samples)
 		pickle.dump((samples, labels, plateIds), open("features.dat", "wb"), protocol=-1)
@@ -176,7 +199,7 @@ if __name__ == "__main__":
 		print len(labels)
 
 	print "Whiten Features"
-	if 0:
+	if 1:
 		samples = np.array(samples)
 		print samples.shape
 
@@ -237,7 +260,7 @@ if __name__ == "__main__":
 		nonZeroLabelErrors.append(p - tr)
 	print "Non-zero label error", np.abs(nonZeroLabelErrors).mean()
 
-	import matplotlib.pyplot as plt
+
 	plt.plot(testLabels, predLabels, '.')
 	plt.show()
 

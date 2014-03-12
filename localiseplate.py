@@ -35,6 +35,30 @@ def ExtractPatch(image, bbox):
 	out[origin[1]:origin[1]+h, origin[0]:origin[0]+w, :] = image[bbox[2]:bbox[2]+h, bbox[0]:bbox[0]+w, :]
 	return out
 
+def ExtractPatchGrey(image, bbox):
+	bbox = map(int,map(round,bbox))
+	#print image.shape, bbox
+	out = np.zeros((bbox[3]-bbox[2], bbox[1]-bbox[0],), dtype=image.dtype)
+
+	origin = [0, 0]
+	if bbox[0] < 0:
+		origin[0] = -bbox[0]
+		bbox[0] = 0
+	if bbox[2] < 0:
+		origin[1] = -bbox[2]
+		bbox[2] = 0
+	if bbox[1] >= image.shape[1]:
+		bbox[1] = image.shape[1]-1
+	if bbox[3] >= image.shape[0]:
+		bbox[3] = image.shape[0]-1
+	
+	h = bbox[3]-bbox[2]
+	w = bbox[1]-bbox[0]
+
+	#print bbox
+	out[origin[1]:origin[1]+h, origin[0]:origin[0]+w] = image[bbox[2]:bbox[2]+h, bbox[0]:bbox[0]+w]
+	return out
+
 def ScoreUsingAspect(numberedRegions, targetAspect = 4.0, vis = None):
 	#Use first criterion (region aspect ratio) to select candidates
 	maxRegionNum = numberedRegions.max()
