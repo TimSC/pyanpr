@@ -20,25 +20,16 @@ import matplotlib.pyplot as plt
 #Correlation 0.62
 #Non-zero label error 0.44
 
-#20 bin 1D sobel
-#Average error 0.0504484715633
-#Correlation 0.398753870431
-#Non-zero label error 0.530846231923
-
-#15 bin 2D absolute sobel
-#Average error 0.0477460861213
-#Correlation 0.443438032678
-#Non-zero label error 0.489148526301
-
 #50 bin 2D absolute sobel
-#Average error 0.0464841858963
-#Correlation 0.516380023656
-#Non-zero label error 0.477589826873
+#Average error 0.0464
+#Correlation 0.51
+#Non-zero label error 0.478
 
-#100 bin 2D absolute sobel
-#Average error 0.0464569322944
-#Correlation 0.515796832502
-#Non-zero label error 0.459122956116
+#Fused HSV and 50 bin 2d absolute sobel
+#Average error 0.0405
+#Correlation 0.59
+#Non-zero label error 0.437
+
 
 def ExtractHistogram(im, chanBins):
 	out = []
@@ -176,6 +167,26 @@ def OverlapProportion(patchBbox, plateBbox):
 	#	print ox, oy
 	return ox * oy
 
+def SplitData(trainIds, plateIds, labels, whitenedSamples):
+	trainRows = [(pi in trainIds) for pi in plateIds]
+	testRows = [(pi not in trainIds) for pi in plateIds]
+
+	print len(trainRows), sum(trainRows)
+	print len(testRows), sum(testRows)
+	trainRows = np.array(trainRows, dtype=np.bool)
+	testRows = np.array(testRows, dtype=np.bool)
+
+	trainingData = [table[trainRows, :] for table in whitenedSamples]
+	trainingLabels = np.array(labels)[trainRows]
+	trainingPlateIds = np.array(plateIds)[trainRows]
+
+	testData = [table[testRows, :] for table in whitenedSamples]
+	testLabels = np.array(labels)[testRows]
+	testPlateIds = np.array(plateIds)[testRows]
+
+	return trainingData, trainingLabels, trainingPlateIds, \
+		testData, testLabels, testPlateIds
+
 if __name__ == "__main__":
 
 	plates = readannotation.ReadPlateAnnotation("plates.annotation")
@@ -219,50 +230,67 @@ if __name__ == "__main__":
 	else:
 		whitenedSamples, labels, plateIds, scaling = pickle.load(open("features-whitened.dat", "rb"))
 
-	print "Extract training data"
+	print "Plan train and test split data"
 	plateIdsSet = set()
 	for pi in plateIds:
 		plateIdsSet.add(pi)
 	plateIdsSet = list(plateIdsSet)
+	trainIds = random.sample(plateIdsSet, int(round(len(plateIdsSet) * 0.5)))
 
-	trainIds = random.sample(plateIdsSet, len(plateIdsSet) / 2)
-	trainRows = [(pi in trainIds) for pi in plateIds]
-	testRows = [(pi not in trainIds) for pi in plateIds]
+	trainingData, trainingLabels, trainingPlateIds, \
+		testData, testLabels, testPlateIds = SplitData(trainIds, plateIds, labels, whitenedSamples)
 
-	print len(trainRows), sum(trainRows)
-	print len(testRows), sum(testRows)
-	trainRows = np.array(trainRows, dtype=np.bool)
-	testRows = np.array(testRows, dtype=np.bool)
+	trainIds1 = random.sample(trainIds, int(round(len(trainIds) * 0.8)))
+	trainingData1, trainingLabels1, trainingPlateIds1, \
+		trainingData2, trainingLabels2, trainingPlateIds2 = SplitData(trainIds1, trainingPlateIds, trainingLabels, trainingData)
 
-	print "Extract training data"
-	trainingData = [table[trainRows, :] for table in whitenedSamples]
-	trainingLabels = np.array(labels)[trainRows]
-	for table in trainingData:
-		print table.shape
+	print trainingLabels1.shape
+	print trainingLabels2.shape
 
 	print "Train regressor"
 	#regressor = svm.SVR()
 	models = []
-	for featureGroup in trainingData:
+	for featureGroup in trainingData1:
 		regressor = ensemble.RandomForestRegressor(n_jobs=4)
-		regressor.fit(featureGroup, trainingLabels)
+		regressor.fit(featureGroup, trainingLabels1)
 		models.append(regressor)
 
-	pickle.dump(models, open("localise-model.dat", "wb"))
+	print "Train fusion model"
+	predLabels = []
+	for featureGroup, regressor in zip(trainingData2, models):
+		predLabelGroup = regressor.predict(featureGroup)
+		predLabels.append(np.array(predLabelGroup).reshape(len(predLabelGroup), 1))
+	fusedFeatures = None
+	for predLabelGroup in predLabels:
+		if fusedFeatures is None:
+			fusedFeatures = predLabelGroup
+		else:
+			fusedFeatures = np.hstack((fusedFeatures, predLabelGroup))
+	for featureGroup in trainingData2:
+		fusedFeatures = np.hstack((fusedFeatures, featureGroup))
+	fusionModel = ensemble.RandomForestRegressor(n_jobs=4)
+	fusionModel.fit(fusedFeatures, trainingLabels2)
 
-	print "Extract test data"
-	
-	testData = [table[testRows, :] for table in whitenedSamples]
-	testLabels = np.array(labels)[testRows]
-	for table in testData:
-		print table.shape
+	pickle.dump((models, fusionModel), open("localise-model.dat", "wb"))
 
-	print "Predict labels on test data"
+	print "Predict intermediate labels on test data"
 	predLabels = []
 	for featureGroup, regressor in zip(testData, models):
 		predLabelGroup = regressor.predict(featureGroup)
-		predLabels.append(predLabelGroup)
-	predLabels = np.array(predLabels).mean(axis=0)
+		predLabels.append(np.array(predLabelGroup).reshape(len(predLabelGroup), 1))
+
+	print "Fuse intermediate results"
+
+	fusedFeatures = None
+	for predLabelGroup in predLabels:
+		if fusedFeatures is None:
+			fusedFeatures = predLabelGroup
+		else:
+			fusedFeatures = np.hstack((fusedFeatures, predLabelGroup))
+	for featureGroup in testData:
+		fusedFeatures = np.hstack((fusedFeatures, featureGroup))
+
+	predLabels = fusionModel.predict(fusedFeatures)
 
 	errors = []
 	for p, tr in zip(predLabels, testLabels):
