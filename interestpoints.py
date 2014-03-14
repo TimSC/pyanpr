@@ -15,15 +15,20 @@ import matplotlib.pyplot as plt
 #Correlation 0.60
 #Non-zero label error 0.44
 
-#HSV 10-bin histogram and 20 bin sobel
+#HSV 10-bin histogram and 20 bin 1D sobel
 #Average error 0.038
 #Correlation 0.62
 #Non-zero label error 0.44
 
-#20 bin sobel
+#20 bin 1D sobel
 #Average error 0.0504484715633
 #Correlation 0.398753870431
 #Non-zero label error 0.530846231923
+
+#15 bin 2D absolute sobel
+#Average error 0.0477460861213
+#Correlation 0.443438032678
+#Non-zero label error 0.489148526301
 
 def test():
 	im1 = cv2.imread("/media/data/home/tim/kinatomic/datasets/anpr-plates/IMG_20140219_105833.jpg")
@@ -113,7 +118,9 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 		hsvImg = color.rgb2hsv(normIm)
 
 		greyim = 0.2126 * im[:,:,0] + 0.7152 * im[:,:,1] + 0.0722 * im[:,:,2]
-		edgeIm = ndimage.sobel(greyim, axis=0)
+		edgeIm1 = np.abs(ndimage.sobel(greyim, axis=0))
+		edgeIm2 = np.abs(ndimage.sobel(greyim, axis=1))
+		edgeImCombined = edgeIm1 + edgeIm2
 
 		for record in photo[1:]:
 			plateId = record['object']
@@ -135,18 +142,20 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 					patchBbox = (x1, x2, y1, y2)
 
 					crop = localiseplate.ExtractPatch(hsvImg, patchBbox)
-					crop2 = localiseplate.ExtractPatchGrey(edgeIm, patchBbox)
+					edgeCrop = localiseplate.ExtractPatchGrey(edgeImCombined, patchBbox)
 
 					#feat1 = ExtractHistogram(crop, [np.linspace(0., 1., 10), np.linspace(0., 1., 10), np.linspace(0., 1., 10)])
-					feat2 = ExtractHistogramGrey(crop2, np.linspace(-1000., 1000., 20))
+					edgeFeat = ExtractHistogramGrey(edgeCrop, np.linspace(0., 1500., 100))
 					#feats = np.concatenate((feat1, feat2))
-					feats = feat2
+					feats = edgeFeat
 
 					overlap = OverlapProportion(patchBbox, plateBbox)
 					#print cx, cy, overlap, freq
-					#if overlap > 0.9:
-					#	print cx, cy, overlap
-					#	misc.imshow(crop)
+					if overlap > 0.9:
+						print cx, cy, overlap, edgeCrop.min(), edgeCrop.max()
+						misc.imshow(edgeCrop)
+						plt.plot(feats)
+						plt.show()
 
 					if overlap == 0.:
 						samplesZero.append(feats)
