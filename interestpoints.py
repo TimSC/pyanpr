@@ -40,37 +40,6 @@ import matplotlib.pyplot as plt
 #Correlation 0.515796832502
 #Non-zero label error 0.459122956116
 
-def test():
-	im1 = cv2.imread("/media/data/home/tim/kinatomic/datasets/anpr-plates/IMG_20140219_105833.jpg")
-
-	im1 = misc.imresize(im1, (800, 600))
-
-	print "Convert to grey"
-	grey1 = cv2.cvtColor(im1,cv2.COLOR_BGR2GRAY)
-	print "Conversion done"
-
-	print "GetKeypoints"
-	detector = cv2.FeatureDetector_create("BRISK")
-	#print str(detector.getParams())
-	#detector.setInt("nFeatures", 50)
-	print "GetKeypoints done"
-
-	print "Get descriptors"
-	descriptor = cv2.DescriptorExtractor_create("BRISK")
-	#print "Extracting points of interest 1"
-	keypoints1 = detector.detect(grey1)
-	#keypoints1 = DetectAcrossImage(grey1, detector)
-	#VisualiseKeypoints(grey1, keypoints1)
-	(keypoints1, descriptors1) = descriptor.compute(grey1, keypoints1)
-	print "Get descriptors done"
-
-	for kp in keypoints1:
-		#print kp.pt
-		im1[kp.pt[1], kp.pt[0], :] = (255, 0, 0)
-	
-	misc.imshow(im1)
-
-
 def ExtractHistogram(im, chanBins):
 	out = []
 	for chanNum in range(im.shape[2]):
@@ -154,13 +123,14 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 					crop = localiseplate.ExtractPatch(hsvImg, patchBbox)
 					edgeCrop = localiseplate.ExtractPatchGrey(edgeImCombined, patchBbox)
 
-					#feat1 = ExtractHistogram(crop, [np.linspace(0., 1., 10), np.linspace(0., 1., 10), np.linspace(0., 1., 10)])
-					edgeFeat = ExtractHistogramGrey(edgeCrop, np.linspace(0., 1500., 100))
+					hsvFeat = ExtractHistogram(crop, [np.linspace(0., 1., 10), np.linspace(0., 1., 10), np.linspace(0., 1., 10)])
+					edgeFeat = ExtractHistogramGrey(edgeCrop, np.linspace(0., 1500., 50))
 					#feats = np.concatenate((feat1, feat2))
-					feats = edgeFeat
+					feats = [hsvFeat, edgeFeat]
+					#print feats
 
 					#Protect against divide by zero
-					feats = np.nan_to_num(feats)
+					feats = map(np.nan_to_num, feats)
 
 					overlap = OverlapProportion(patchBbox, plateBbox)
 					#print cx, cy, overlap, freq
@@ -216,30 +186,38 @@ if __name__ == "__main__":
 		imgPath = sys.argv[1]
 
 	print "Extract features"
-	if 1:
-		samples, labels, plateIds = GenerateSamples(plates, imgPath)
-		samples = np.array(samples)
-		pickle.dump((samples, labels, plateIds), open("features.dat", "wb"), protocol=-1)
-	
 	if 0:
+		samples, labels, plateIds = GenerateSamples(plates, imgPath)
+		samplesArray = []
+		for featGroupNum in range(len(samples[0])):
+			featGroup = [s[featGroupNum] for s in samples]
+			sampleGroup = np.array(featGroup)
+			samplesArray.append(sampleGroup)
+		pickle.dump((samplesArray, labels, plateIds), open("features.dat", "wb"), protocol=-1)
+
+	if 1:
 		samples, labels, plateIds = pickle.load(open("features.dat", "rb"))
-		print len(labels)
+		print len(labels), len(samples)
 
 	print "Whiten Features"
 	if 1:
-		samples = np.array(samples)
-		print samples.shape
+		whitenedSamples = []
+		for featGroup in samples:
 
-		var = samples.var(axis=0)
-		scaling = np.power(var, 0.5)
-		scalingZeros = (scaling == 0.)
-		scaling += scalingZeros #Prevent divide by zero
-		whitened = samples / scaling
-		whitenedVar = whitened.var(axis=0)
+			featGroup = np.array(featGroup)
+			print featGroup.shape
 
-		pickle.dump((whitened, labels, plateIds, scaling), open("features-whitened.dat", "wb"), protocol=-1)
+			var = featGroup.var(axis=0)
+			scaling = np.power(var, 0.5)
+			scalingZeros = (scaling == 0.)
+			scaling += scalingZeros #Prevent divide by zero
+			whitened = featGroup / scaling
+			#whitenedVar = whitened.var(axis=0)
+			whitenedSamples.append(whitened)
+
+		pickle.dump((whitenedSamples, labels, plateIds, scaling), open("features-whitened.dat", "wb"), protocol=-1)
 	else:
-		whitened, labels, plateIds, scaling = pickle.load(open("features-whitened.dat", "rb"))
+		whitenedSamples, labels, plateIds, scaling = pickle.load(open("features-whitened.dat", "rb"))
 
 	print "Extract training data"
 	plateIdsSet = set()
@@ -257,24 +235,34 @@ if __name__ == "__main__":
 	testRows = np.array(testRows, dtype=np.bool)
 
 	print "Extract training data"
-	trainingData = whitened[trainRows, :]
+	trainingData = [table[trainRows, :] for table in whitenedSamples]
 	trainingLabels = np.array(labels)[trainRows]
-	print trainingData.shape
+	for table in trainingData:
+		print table.shape
 
 	print "Train regressor"
 	#regressor = svm.SVR()
-	regressor = ensemble.RandomForestRegressor(n_jobs=4)
+	models = []
+	for featureGroup in trainingData:
+		regressor = ensemble.RandomForestRegressor(n_jobs=4)
+		regressor.fit(featureGroup, trainingLabels)
+		models.append(regressor)
 
-	regressor.fit(trainingData, trainingLabels)
-
-	pickle.dump(regressor, open("localise-model.dat", "wb"))
+	pickle.dump(models, open("localise-model.dat", "wb"))
 
 	print "Extract test data"
 	
-	testData = whitened[testRows, :]
+	testData = [table[testRows, :] for table in whitenedSamples]
 	testLabels = np.array(labels)[testRows]
-	predLabels = regressor.predict(testData)
-	print testData.shape
+	for table in testData:
+		print table.shape
+
+	print "Predict labels on test data"
+	predLabels = []
+	for featureGroup, regressor in zip(testData, models):
+		predLabelGroup = regressor.predict(featureGroup)
+		predLabels.append(predLabelGroup)
+	predLabels = np.array(predLabels).mean(axis=0)
 
 	errors = []
 	for p, tr in zip(predLabels, testLabels):
