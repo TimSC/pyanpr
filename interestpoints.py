@@ -30,6 +30,16 @@ import matplotlib.pyplot as plt
 #Correlation 0.443438032678
 #Non-zero label error 0.489148526301
 
+#50 bin 2D absolute sobel
+#Average error 0.0464841858963
+#Correlation 0.516380023656
+#Non-zero label error 0.477589826873
+
+#100 bin 2D absolute sobel
+#Average error 0.0464569322944
+#Correlation 0.515796832502
+#Non-zero label error 0.459122956116
+
 def test():
 	im1 = cv2.imread("/media/data/home/tim/kinatomic/datasets/anpr-plates/IMG_20140219_105833.jpg")
 
@@ -149,13 +159,16 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 					#feats = np.concatenate((feat1, feat2))
 					feats = edgeFeat
 
+					#Protect against divide by zero
+					feats = np.nan_to_num(feats)
+
 					overlap = OverlapProportion(patchBbox, plateBbox)
 					#print cx, cy, overlap, freq
-					if overlap > 0.9:
-						print cx, cy, overlap, edgeCrop.min(), edgeCrop.max()
-						misc.imshow(edgeCrop)
-						plt.plot(feats)
-						plt.show()
+					#if overlap > 0.9:
+					#	print cx, cy, overlap, edgeCrop.min(), edgeCrop.max()
+					#	misc.imshow(edgeCrop)
+					#	plt.plot(feats)
+					#	plt.show()
 
 					if overlap == 0.:
 						samplesZero.append(feats)
@@ -219,9 +232,10 @@ if __name__ == "__main__":
 
 		var = samples.var(axis=0)
 		scaling = np.power(var, 0.5)
+		scalingZeros = (scaling == 0.)
+		scaling += scalingZeros #Prevent divide by zero
 		whitened = samples / scaling
 		whitenedVar = whitened.var(axis=0)
-
 
 		pickle.dump((whitened, labels, plateIds, scaling), open("features-whitened.dat", "wb"), protocol=-1)
 	else:
