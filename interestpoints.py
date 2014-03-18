@@ -162,11 +162,7 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 					feats5 = featCol3[j]
 					overlap = overlapCol[j]
 
-					combinedFeats = feats1[:]
-					combinedFeats.extend(feats2)
-					combinedFeats.extend(feats3)
-					combinedFeats.extend(feats4)
-					combinedFeats.extend(feats5)
+					combinedFeats = [np.concatenate((feats1[0], feats2[0], feats3[0], feats4[0], feats5[0]))]
 
 					if overlap == 0.:
 						samplesZero.append(combinedFeats)
