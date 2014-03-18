@@ -82,7 +82,10 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 		samplesZero = []
 		plateIdZero = []
 
-		actualFina = readannotation.GetActualImageFileName(fina, [imgPath])	
+		actualFina = readannotation.GetActualImageFileName(fina, [imgPath])
+		if not os.path.isfile(str(actualFina)):
+			raise RuntimeError("Unable to find file: "+str(actualFina))
+
 		im = misc.imread(actualFina)
 		normIm = exposure.rescale_intensity(im)
 		hsvImg = color.rgb2hsv(normIm)
@@ -99,8 +102,13 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 
 			wx = 50.
 			wy = 50.
+			featGrid = []
+			overlapGrid = []
 			
 			for cx in range(0, normIm.shape[1], 60):
+				featCol = []
+				overlapCol = []
+
 				for cy in range(0, normIm.shape[0], 60):
 					
 
@@ -115,9 +123,10 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 					edgeCrop = localiseplate.ExtractPatchGrey(edgeImCombined, patchBbox)
 
 					hsvFeat = ExtractHistogram(crop, [np.linspace(0., 1., 10), np.linspace(0., 1., 10), np.linspace(0., 1., 10)])
-					edgeFeat = ExtractHistogramGrey(edgeCrop, np.linspace(0., 1500., 50))
+					#edgeFeat = ExtractHistogramGrey(edgeCrop, np.linspace(0., 1500., 50))
 					#feats = np.concatenate((feat1, feat2))
-					feats = [hsvFeat, edgeFeat]
+					#feats = [hsvFeat, edgeFeat]
+					feats = [hsvFeat]
 					#print feats
 
 					#Protect against divide by zero
@@ -131,6 +140,14 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 					#	plt.plot(feats)
 					#	plt.show()
 
+					featCol.append(feats)
+					overlapCol.append(overlap)
+
+				featGrid.append(featCol)
+				overlapGrid.append(overlapCol)
+
+			for featCol, overlapCol in zip(featGrid, overlapGrid):
+				for feats, overlap in zip(featCol, overlapCol):
 					if overlap == 0.:
 						samplesZero.append(feats)
 						labelsZero.append(overlap)
@@ -197,7 +214,7 @@ if __name__ == "__main__":
 		imgPath = sys.argv[1]
 
 	print "Extract features"
-	if 0:
+	if 1:
 		samples, labels, plateIds = GenerateSamples(plates, imgPath)
 		samplesArray = []
 		for featGroupNum in range(len(samples[0])):
