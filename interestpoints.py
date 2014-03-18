@@ -257,57 +257,69 @@ if __name__ == "__main__":
 	trainingData, trainingLabels, trainingPlateIds, \
 		testData, testLabels, testPlateIds = SplitData(trainIds, plateIds, labels, whitenedSamples)
 
-	trainIds1 = random.sample(trainIds, int(round(len(trainIds) * 0.8)))
-	trainingData1, trainingLabels1, trainingPlateIds1, \
-		trainingData2, trainingLabels2, trainingPlateIds2 = SplitData(trainIds1, trainingPlateIds, trainingLabels, trainingData)
+	decisionLevelFusion = False
+	if decisionLevelFusion:
 
-	print trainingLabels1.shape
-	print trainingLabels2.shape
+		trainIds1 = random.sample(trainIds, int(round(len(trainIds) * 0.8)))
+		trainingData1, trainingLabels1, trainingPlateIds1, \
+			trainingData2, trainingLabels2, trainingPlateIds2 = SplitData(trainIds1, trainingPlateIds, trainingLabels, trainingData)
 
-	print "Train regressor"
-	#regressor = svm.SVR()
-	models = []
-	for featureGroup in trainingData1:
+		print trainingLabels1.shape
+		print trainingLabels2.shape
+
+		print "Train regressor"
+		#regressor = svm.SVR()
+		models = []
+		for featureGroup in trainingData1:
+			regressor = ensemble.RandomForestRegressor(n_jobs=4)
+			regressor.fit(featureGroup, trainingLabels1)
+			models.append(regressor)
+
+		print "Train fusion model"
+		predLabels = []
+		for featureGroup, regressor in zip(trainingData2, models):
+			predLabelGroup = regressor.predict(featureGroup)
+			predLabels.append(np.array(predLabelGroup).reshape(len(predLabelGroup), 1))
+		fusedFeatures = None
+		for predLabelGroup in predLabels:
+			if fusedFeatures is None:
+				fusedFeatures = predLabelGroup
+			else:
+				fusedFeatures = np.hstack((fusedFeatures, predLabelGroup))
+		for featureGroup in trainingData2:
+			fusedFeatures = np.hstack((fusedFeatures, featureGroup))
+		fusionModel = ensemble.RandomForestRegressor(n_jobs=4)
+		fusionModel.fit(fusedFeatures, trainingLabels2)
+
+		pickle.dump((models, fusionModel), open("localise-model.dat", "wb"))
+	else:
+		featureGroup = trainingData[0]
 		regressor = ensemble.RandomForestRegressor(n_jobs=4)
-		regressor.fit(featureGroup, trainingLabels1)
-		models.append(regressor)
+		regressor.fit(featureGroup, trainingLabels)
+		pickle.dump(regressor, open("localise-model.dat", "wb"))
 
-	print "Train fusion model"
-	predLabels = []
-	for featureGroup, regressor in zip(trainingData2, models):
-		predLabelGroup = regressor.predict(featureGroup)
-		predLabels.append(np.array(predLabelGroup).reshape(len(predLabelGroup), 1))
-	fusedFeatures = None
-	for predLabelGroup in predLabels:
-		if fusedFeatures is None:
-			fusedFeatures = predLabelGroup
-		else:
-			fusedFeatures = np.hstack((fusedFeatures, predLabelGroup))
-	for featureGroup in trainingData2:
-		fusedFeatures = np.hstack((fusedFeatures, featureGroup))
-	fusionModel = ensemble.RandomForestRegressor(n_jobs=4)
-	fusionModel.fit(fusedFeatures, trainingLabels2)
+	if decisionLevelFusion:
+		print "Predict intermediate labels on test data"
+		predLabels = []
+		for featureGroup, regressor in zip(testData, models):
+			predLabelGroup = regressor.predict(featureGroup)
+			predLabels.append(np.array(predLabelGroup).reshape(len(predLabelGroup), 1))
 
-	pickle.dump((models, fusionModel), open("localise-model.dat", "wb"))
+		print "Fuse intermediate results"
 
-	print "Predict intermediate labels on test data"
-	predLabels = []
-	for featureGroup, regressor in zip(testData, models):
-		predLabelGroup = regressor.predict(featureGroup)
-		predLabels.append(np.array(predLabelGroup).reshape(len(predLabelGroup), 1))
+		fusedFeatures = None
+		for predLabelGroup in predLabels:
+			if fusedFeatures is None:
+				fusedFeatures = predLabelGroup
+			else:
+				fusedFeatures = np.hstack((fusedFeatures, predLabelGroup))
+		for featureGroup in testData:
+			fusedFeatures = np.hstack((fusedFeatures, featureGroup))
 
-	print "Fuse intermediate results"
+		predLabels = fusionModel.predict(fusedFeatures)
 
-	fusedFeatures = None
-	for predLabelGroup in predLabels:
-		if fusedFeatures is None:
-			fusedFeatures = predLabelGroup
-		else:
-			fusedFeatures = np.hstack((fusedFeatures, predLabelGroup))
-	for featureGroup in testData:
-		fusedFeatures = np.hstack((fusedFeatures, featureGroup))
-
-	predLabels = fusionModel.predict(fusedFeatures)
+	else:
+		predLabels = regressor.predict(testData[0])
 
 	errors = []
 	for p, tr in zip(predLabels, testLabels):
