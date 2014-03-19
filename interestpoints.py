@@ -239,7 +239,7 @@ if __name__ == "__main__":
 		imgPath = sys.argv[1]
 
 	print "Extract features"
-	if 1:
+	if 0:
 		samples, labels, plateIds = GenerateSamples(plates, imgPath)
 		samplesArray = []
 		for featGroupNum in range(len(samples[0])):
@@ -255,6 +255,7 @@ if __name__ == "__main__":
 	print "Whiten Features"
 	if 1:
 		whitenedSamples = []
+		scalingGroups = []
 		for featGroup in samples:
 
 			featGroup = np.array(featGroup)
@@ -264,13 +265,14 @@ if __name__ == "__main__":
 			scaling = np.power(var, 0.5)
 			scalingZeros = (scaling == 0.)
 			scaling += scalingZeros #Prevent divide by zero
+			scalingGroups.append(scaling)
 			whitened = featGroup / scaling
 			#whitenedVar = whitened.var(axis=0)
 			whitenedSamples.append(whitened)
 
-		pickle.dump((whitenedSamples, labels, plateIds, scaling), open("features-whitened.dat", "wb"), protocol=-1)
+		pickle.dump((whitenedSamples, labels, plateIds, scalingGroups), open("features-whitened.dat", "wb"), protocol=-1)
 	else:
-		whitenedSamples, labels, plateIds, scaling = pickle.load(open("features-whitened.dat", "rb"))
+		whitenedSamples, labels, plateIds, scalingGroups = pickle.load(open("features-whitened.dat", "rb"))
 
 	print "Plan train and test split data"
 	plateIdsSet = set()
@@ -316,12 +318,12 @@ if __name__ == "__main__":
 		fusionModel = ensemble.RandomForestRegressor(n_jobs=4)
 		fusionModel.fit(fusedFeatures, trainingLabels2)
 
-		pickle.dump((models, fusionModel), open("localise-model.dat", "wb"))
+		pickle.dump((models, fusionModel, scalingGroups), open("localise-model.dat", "wb"))
 	else:
 		featureGroup = trainingData[0]
 		regressor = ensemble.RandomForestRegressor(n_jobs=4)
 		regressor.fit(featureGroup, trainingLabels)
-		pickle.dump(regressor, open("localise-model.dat", "wb"))
+		pickle.dump((regressor, scalingGroups), open("localise-model.dat", "wb"))
 
 	if decisionLevelFusion:
 		print "Predict intermediate labels on test data"
