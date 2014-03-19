@@ -149,20 +149,21 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 			for i, featCol1 in enumerate(featGrid):
 
 				#featCol1 = featGrid[i]
-				featCol2 = featGrid[(i-1)%len(featGrid)]
-				featCol3 = featGrid[(i+1)%len(featGrid)]
+				#featCol2 = featGrid[(i-1)%len(featGrid)]
+				#featCol3 = featGrid[(i+1)%len(featGrid)]
 				overlapCol = overlapGrid[i]
 
 				for j, feats1 in enumerate(featCol1):
 
 					#feats1 = featCol[j]
-					feats2 = featCol1[(j-1)%len(featCol)]
-					feats3 = featCol1[(j+1)%len(featCol)]
-					feats4 = featCol2[j]
-					feats5 = featCol3[j]
+					#feats2 = featCol1[(j-1)%len(featCol)]
+					#feats3 = featCol1[(j+1)%len(featCol)]
+					#feats4 = featCol2[j]
+					#feats5 = featCol3[j]
 					overlap = overlapCol[j]
 
-					combinedFeats = [np.concatenate((feats1[0], feats2[0], feats3[0], feats4[0], feats5[0]))]
+					#combinedFeats = [np.concatenate((feats1[0], feats2[0], feats3[0], feats4[0], feats5[0]))]
+					combinedFeats = feats1
 
 					if overlap == 0.:
 						samplesZero.append(combinedFeats)
