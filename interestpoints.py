@@ -65,6 +65,58 @@ def OverlapProportion1D(a1, a2, b1, b2):
 		return float(a2 - b1) / (a2 - a1)
 	raise RuntimeError("Internal error")
 
+def GenerateFeatureGrid(hsvImg, plateBbox = None):
+
+	wx = 50.
+	wy = 50.
+	featGrid = []
+	overlapGrid = []
+			
+	for cx in range(0, hsvImg.shape[1], 60):
+		featCol = []
+		overlapCol = []
+
+		for cy in range(0, hsvImg.shape[0], 60):
+					
+
+			#print cx, cy
+			x1 = cx - wx / 2.
+			x2 = cx + wx / 2.
+			y1 = cy - wy / 2.
+			y2 = cy + wy / 2.
+			patchBbox = (x1, x2, y1, y2)
+
+			crop = localiseplate.ExtractPatch(hsvImg, patchBbox)
+			#edgeCrop = localiseplate.ExtractPatchGrey(edgeImCombined, patchBbox)
+
+			hsvFeat = ExtractHistogram(crop, [np.linspace(0., 1., 10), np.linspace(0., 1., 10), np.linspace(0., 1., 10)])
+			#edgeFeat = ExtractHistogramGrey(edgeCrop, np.linspace(0., 1500., 50))
+			#feats = np.concatenate((feat1, feat2))
+			#feats = [hsvFeat, edgeFeat]
+			feats = [hsvFeat]
+			#print feats
+
+			#Protect against divide by zero
+			feats = map(np.nan_to_num, feats)
+
+			overlap = None
+			if plateBbox is not None:
+				overlap = OverlapProportion(patchBbox, plateBbox)
+			#print cx, cy, overlap, freq
+			#if overlap > 0.9:
+			#	print cx, cy, overlap, edgeCrop.min(), edgeCrop.max()
+			#	misc.imshow(edgeCrop)
+			#	plt.plot(feats)
+			#	plt.show()
+
+			featCol.append(feats)
+			overlapCol.append(overlap)
+
+		featGrid.append(featCol)
+		overlapGrid.append(overlapCol)
+
+	return featGrid, overlapGrid
+
 def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 
 	labels = []
@@ -100,51 +152,7 @@ def GenerateSamples(plates, imgPath, maxZeroSamples = 500):
 			plateBbox = record['bbox']
 			plateBbox = [plateBbox[0], plateBbox[0] + plateBbox[2], plateBbox[1], plateBbox[1]+plateBbox[3]]
 
-			wx = 50.
-			wy = 50.
-			featGrid = []
-			overlapGrid = []
-			
-			for cx in range(0, normIm.shape[1], 60):
-				featCol = []
-				overlapCol = []
-
-				for cy in range(0, normIm.shape[0], 60):
-					
-
-					#print cx, cy
-					x1 = cx - wx / 2.
-					x2 = cx + wx / 2.
-					y1 = cy - wy / 2.
-					y2 = cy + wy / 2.
-					patchBbox = (x1, x2, y1, y2)
-
-					crop = localiseplate.ExtractPatch(hsvImg, patchBbox)
-					edgeCrop = localiseplate.ExtractPatchGrey(edgeImCombined, patchBbox)
-
-					hsvFeat = ExtractHistogram(crop, [np.linspace(0., 1., 10), np.linspace(0., 1., 10), np.linspace(0., 1., 10)])
-					#edgeFeat = ExtractHistogramGrey(edgeCrop, np.linspace(0., 1500., 50))
-					#feats = np.concatenate((feat1, feat2))
-					#feats = [hsvFeat, edgeFeat]
-					feats = [hsvFeat]
-					#print feats
-
-					#Protect against divide by zero
-					feats = map(np.nan_to_num, feats)
-
-					overlap = OverlapProportion(patchBbox, plateBbox)
-					#print cx, cy, overlap, freq
-					#if overlap > 0.9:
-					#	print cx, cy, overlap, edgeCrop.min(), edgeCrop.max()
-					#	misc.imshow(edgeCrop)
-					#	plt.plot(feats)
-					#	plt.show()
-
-					featCol.append(feats)
-					overlapCol.append(overlap)
-
-				featGrid.append(featCol)
-				overlapGrid.append(overlapCol)
+			featGrid, overlapGrid = GenerateFeatureGrid(hsvImg, plateBbox)
 
 			for i, featCol1 in enumerate(featGrid):
 
